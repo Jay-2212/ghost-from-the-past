@@ -203,7 +203,7 @@
     stripNoise(clone);
     var art = null;
     if (R) {
-      try { art = new R(clone, { charThreshold: 300, keepClasses: false }).parse(); } catch (e) { art = null; }
+      try { art = new R(clone, { charThreshold: 300, keepClasses: true }).parse(); } catch (e) { art = null; }
     }
     var title = '', markdown = '', excerpt = '', byline = '', published = '';
     if (art && art.textContent && art.textContent.trim().length >= 200) {

@@ -57,7 +57,7 @@
   }
 
   // US SSN-like and Indian Aadhaar-like (12 digits in 4-4-4 groups) identifiers.
-  var ID_RES = [/\b\d{3}-\d{2}-\d{4}\b/g, /\b[2-9]\d{3}[ -]\d{4}[ -]\d{4}\b/g, /\b[A-Z]{5}\d{4}[A-Z]\b/g /* PAN */];
+  var ID_RES = [/\b\d{3}-\d{2}-\d{4}\b/g, /(?<![\d-])[2-9]\d{3}([ -])\d{4}\1\d{4}(?![ -]?\d)/g, /\b[A-Z]{5}\d{4}[A-Z]\b/g /* PAN */];
   function redactIds(text) {
     for (var i = 0; i < ID_RES.length; i++) text = text.replace(ID_RES[i], '[redacted-id]');
     return text;
