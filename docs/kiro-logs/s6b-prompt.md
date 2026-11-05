@@ -1,0 +1,8 @@
+Follow-up fix (Kiro S6b) for tests/extractors/live.mjs. Small, targeted edits only.
+
+Hark ran it: 0 passed, 7 failed, 3 blocked. Two bugs in live.mjs:
+1. It injects extension/lib/extract.js, which does not exist. Inject exactly the content-script files in the order extension/manifest.json lists them under content_scripts[0].js (vendor/Readability.js, vendor/turndown.js, lib/blocklist.js, lib/pipeline.js, lib/extractors/*.js ...), read the list from manifest.json instead of hard-coding it, and skip content.js itself. Then call the pipeline entry point the way extension/content.js does (read content.js to find the exact global/function name and arguments).
+2. page.addScriptTag fails on GitHub and MDN because of the page CSP ("Refused to execute inline script"). Create the browser context with bypassCSP: true.
+Also: x.com returning a non-2xx (net::ERR_HTTP_RESPONSE_CODE_FAILURE) or a login wall must count as "blocked", not "fail". Use a real, public X post URL is not required; keep x as blocked if it walls. Use a real Stack Overflow question URL that exists (e.g. https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-processing-an-unsorted-array) and a real Reddit thread (e.g. https://www.reddit.com/r/AskReddit/comments/1ku5jde/ or any you know exists; 403 stays "blocked").
+Run it yourself once: PLAYWRIGHT_BROWSERS_PATH=/workspace/.pw-browsers node tests/extractors/live.mjs (headless Chromium is installed there; it has a hard timeout per page and always closes the browser). Fix only live.mjs issues; if an extractor itself is wrong, list it in the summary but do not rewrite extractors. Then run (cd extension && npm test).
+Never print or commit secrets. End with the per-site pass/fail/blocked table.

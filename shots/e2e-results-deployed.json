@@ -1,6 +1,6 @@
 {
   "base": "https://ghost-from-the-past-test.jb-brain.workers.dev",
-  "at": "2026-11-05T22:08:07.855Z",
+  "at": "2026-11-05T22:23:19.945Z",
   "results": [
     {
       "name": "extension service worker loads",
@@ -65,7 +65,7 @@
     {
       "name": "search_memory with domain filter finds MDN",
       "ok": true,
-      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (9s, docs-page)"
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (14s, docs-page)"
     },
     {
       "name": "list_pages for today",
@@ -75,7 +75,7 @@
     {
       "name": "get_page returns full markdown",
       "ok": true,
-      "detail": "94725 chars"
+      "detail": "94726 chars"
     },
     {
       "name": "forget refuses without confirm",

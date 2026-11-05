@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-11-05T22:20:02.381Z",
+  "timeout_ms": 30000,
+  "total": 10,
+  "passed": 4,
+  "failed": 2,
+  "blocked": 4,
+  "results": [
+    {
+      "name": "youtube",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "status": "blocked",
+      "kind": null,
+      "chars": 0,
+      "keyFields": [],
+      "reason": "HTTP 429"
+    },
+    {
+      "name": "reddit",
+      "url": "https://www.reddit.com/r/AskReddit/comments/1ku5jde/",
+      "status": "blocked",
+      "kind": null,
+      "chars": 0,
+      "keyFields": [],
+      "reason": "HTTP 403"
+    },
+    {
+      "name": "x",
+      "url": "https://x.com/elonmusk/status/1",
+      "status": "blocked",
+      "kind": null,
+      "chars": 0,
+      "keyFields": [],
+      "reason": "HTTP network error"
+    },
+    {
+      "name": "github-repo",
+      "url": "https://github.com/mozilla/readability",
+      "status": "fail",
+      "kind": "github-repo",
+      "chars": 7648,
+      "keyFields": []
+    },
+    {
+      "name": "github-issue",
+      "url": "https://github.com/microsoft/vscode/issues/1",
+      "status": "pass",
+      "kind": "github-issue",
+      "chars": 520,
+      "keyFields": [
+        "title"
+      ]
+    },
+    {
+      "name": "wikipedia",
+      "url": "https://en.wikipedia.org/wiki/Ghost",
+      "status": "pass",
+      "kind": "wikipedia-article",
+      "chars": 94553,
+      "keyFields": [
+        "title"
+      ]
+    },
+    {
+      "name": "stackoverflow",
+      "url": "https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-processing-an-unsorted-array",
+      "status": "blocked",
+      "kind": null,
+      "chars": 0,
+      "keyFields": [],
+      "reason": "HTTP 403"
+    },
+    {
+      "name": "amazon-product",
+      "url": "https://www.amazon.in/dp/B08N5WRWNW",
+      "status": "pass",
+      "kind": "product",
+      "chars": 1839,
+      "keyFields": [
+        "price"
+      ]
+    },
+    {
+      "name": "news",
+      "url": "https://www.bbc.com/news/world",
+      "status": "fail",
+      "kind": "article",
+      "chars": 7035,
+      "keyFields": []
+    },
+    {
+      "name": "mdn-docs",
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API",
+      "status": "pass",
+      "kind": "docs-page",
+      "chars": 5722,
+      "keyFields": [
+        "title"
+      ]
+    }
+  ]
+}

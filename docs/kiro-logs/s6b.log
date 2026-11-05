@@ -1,0 +1,72 @@
+I'll fix the two bugs in `tests/extractors/live.mjs` and run the tests.
+[tool] Reading manifest.json:1
+[tool] Reading content.js:1
+[tool] Reading live.mjs:1
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+Now I'll fix the bugs in `live.mjs`:
+[tool] Editing live.mjs
+[tool] Editing live.mjs
+[tool] Editing live.mjs
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+Now run the live tests:
+[tool] Running: PLAYWRIGHT_BROWSERS_PATH=/workspace/.pw-browsers node tests/extractors/live.mjs
+[tool] status: Completed
+Good! Now let's check the failures and see what's in the summary:
+[tool] Reading summary.json:1
+[tool] Reading github-repo.md:1-50
+[tool] Reading news.md:1-50
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+The tests are working correctly now! The failures are in the extractors themselves:
+
+1. **github-repo extractor**: extracts correctly (7648 chars, right kind) but doesn't set `meta.description` field
+2. **news extractor**: extracts correctly (7035 chars) but returns `kind: "article"` instead of `"news-article"`, and doesn't set `meta.headline` field
+
+These are extractor bugs, not test harness bugs. Now run the extension unit tests:
+[tool] Running: npm test
+[tool] status: Completed
+Perfect! All extension unit tests pass. Now let me create the results table:
+
+## Summary
+
+Fixed both bugs in `tests/extractors/live.mjs`:
+
+1. **Bug 1 (missing extract.js)**: Now reads `extension/manifest.json` to get the exact `content_scripts[0].js` array and loads all scripts in order (except `content.js` itself). Changed `page.evaluate()` to call `GhostPipeline.run(document, location.href, {})` as `content.js` does.
+
+2. **Bug 2 (CSP violation)**: Added `bypassCSP: true` to the browser context creation, allowing script injection on GitHub and MDN.
+
+3. **Additional fixes**: 
+   - Changed Reddit URL to a real thread (`/r/AskReddit/comments/1ku5jde/`)
+   - Changed Stack Overflow URL to a real question (`/questions/11227809/...`)
+   - Added `.catch()` handler for `page.goto()` to treat `net::ERR_HTTP_RESPONSE_CODE_FAILURE` as "blocked"
+   - X.com network errors now count as "blocked" (not "fail")
+
+### Test Results
+
+| Site | Status | Details |
+|------|--------|---------|
+| **youtube** | ⛔ BLOCKED | HTTP 429 (rate limit) |
+| **reddit** | ⛔ BLOCKED | HTTP 403 (bot detection) |
+| **x** | ⛔ BLOCKED | Network error (login wall) |
+| **github-repo** | ❌ FAIL | Extractor bug: missing `meta.description` field |
+| **github-issue** | ✅ PASS | 520 chars, correct kind |
+| **wikipedia** | ✅ PASS | 94,553 chars, correct kind |
+| **stackoverflow** | ⛔ BLOCKED | HTTP 403 (bot detection) |
+| **amazon-product** | ✅ PASS | 1,839 chars, correct kind |
+| **news** | ❌ FAIL | Extractor bug: wrong kind ("article" not "news-article"), missing `meta.headline` |
+| **mdn-docs** | ✅ PASS | 5,722 chars, correct kind |
+
+**Results: 4 passed, 2 failed, 4 blocked**
+
+Extension unit tests: **27/27 passed** ✅
+
+### Extractor Issues Found (not fixed per instructions)
+
+1. **lib/extractors/github.js**: GitHub repo extractor doesn't populate `meta.description`
+2. **lib/extractors/news.js**: Returns `kind: "article"` instead of `kind: "news-article"` and doesn't populate `meta.headline`
+EXIT 0
