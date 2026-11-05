@@ -1,0 +1,117 @@
+I'll start by reviewing the authoritative sources, apply the spec fixes, then implement the worker scaffolding and full MCP integration.
+[tool] status: Failed
+Let me read the files correctly:
+[tool] Reading BRIEF.md:1
+[tool] status: Completed
+Now let me check the existing spec files to see what needs fixing:
+[tool] Finding .kiro/specs/ghost-from-the-past/*.md
+[tool] status: Completed
+[tool] Reading design.md:1, tasks.md:1, tech.md:1, design-language.md:1
+[tool] status: Completed
+Now let me check the tasks.md file:
+[tool] Reading tasks.md:1
+[tool] status: Completed
+Now I'll create a task list and start applying the fixes, then implement Phase 1–5 of the worker:
+[tool] Creating task list: Ghost from the Past: Apply spec fixes (PART A) and implem...
+[tool] status: Completed
+## PART A: Apply Review Fixes
+
+Let me apply the 13 fixes to the spec files:
+
+**Fix 1 & 2: content.js is CLASSIC script, Embedder API, and design-language.md front matter**
+[tool] Editing design.md
+[tool] status: Completed
+[tool] Editing design.md
+[tool] status: Completed
+[tool] Editing design.md
+[tool] status: Completed
+[tool] Editing design.md
+[tool] status: Completed
+Now fix tech.md:Now fix tech.md (content.js as classic script and other issues):
+[tool] Editing tech.md
+[tool] status: Completed
+[tool] Editing tech.md
+[tool] status: Completed
+Now fix design-language.md front matter to a single block:
+[tool] Reading design-language.md:1-30
+[tool] status: Completed
+[tool] Editing design-language.md
+[tool] status: Completed
+Now let me check if secret-guard.mjs exists and needs fixing:
+[tool] Finding .kiro/hooks/*.json
+[tool] status: Completed
+[tool] Reading secret-guard.json:1
+[tool] status: Completed
+Let me check if secret-guard.mjs exists and fix it if needed:
+[tool] Finding .kiro/hooks/secret-guard.mjs
+[tool] status: Completed
+[tool] Reading secret-guard.mjs:1
+[tool] status: Completed
+Now I need to fix the secret-guard.mjs to match the spec: ignore *.example, *.md, .gitignore and test fixtures; only block real-looking values; and use regex STRINGS in hook matcher. Let me update both:
+[tool] Editing secret-guard.mjs
+[tool] status: Completed
+[tool] Editing secret-guard.json
+[tool] status: Completed
+Good! Now let me mark PART A as complete and move to PART B:
+[tool] Completing #1
+[tool] status: Completed
+## PART B Task 1: Repository Scaffolding
+[tool] Running: cd /workspace/work/ghost-from-the-past && find . -type d -name extension -o -name worker -o -name tests -o -name scripts | head -20
+[tool] status: Completed
+Create the directory structure and root files:
+[tool] Running: cd /workspace/work/ghost-from-the-past && mkdir -p extension/{lib,test,icons} worker/{src,test,migrations} tests/e2e scripts
+[tool] status: Completed
+Now create root-level files:
+[tool] Creating LICENSE
+[tool] status: Completed
+[tool] Creating .gitignore
+[tool] status: Completed
+[tool] Creating package.json
+[tool] status: Completed
+[tool] Creating README.md
+[tool] status: Completed
+[tool] Creating THIRD_PARTY.md
+[tool] status: Completed
+Now mark Task 1 as complete and move to Task 2:
+[tool] Completing #2
+[tool] status: Completed
+## PART B Task 2: Worker Foundation
+
+Create worker/package.json:
+[tool] Creating package.json
+[tool] status: Completed
+Create worker/tsconfig.json:
+[tool] Creating tsconfig.json
+[tool] status: Completed
+Create worker/wrangler.jsonc:
+[tool] Creating wrangler.jsonc
+[tool] status: Completed
+Create worker/.dev.vars.example:
+[tool] Creating .dev.vars.example
+[tool] status: Completed
+Create worker/migrations/0001_init.sql:
+[tool] Creating 0001_init.sql
+[tool] status: Completed
+[tool] Completing #3
+[tool] status: Completed
+## PART B Task 3: Worker Core Libraries (util, auth, chunk, store, embed)
+
+Create worker/src/util.ts:
+[tool] Creating util.ts
+[tool] status: Completed
+Create worker/src/auth.ts:
+[tool] Creating auth.ts
+[tool] status: Completed
+Create worker/src/chunk.ts:
+[tool] Creating chunk.ts
+[tool] status: Completed
+Create worker/src/store.ts (VectorStore interfaces):
+[tool] Creating store.ts
+[tool] status: Completed
+Create worker/src/embed.ts:
+[tool] Creating embed.ts
+[tool] status: Completed
+Now create test files for these modules. Start with worker/test/util.test.ts:
+[tool] Creating util.test.ts
+[tool] status: Completed
+Create worker/test/auth.test.ts:

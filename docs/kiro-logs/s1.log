@@ -1,0 +1,55 @@
+I'll read the brief first, then create all seven files with spec-driven planning.
+[tool] Reading BRIEF.md:1
+[tool] status: Completed
+Now I'll create the seven files systematically, ensuring they're concrete, consistent with the brief, and focused.
+[tool] Creating product.md
+[tool] status: Completed
+[tool] Creating tech.md
+[tool] status: Completed
+[tool] Creating design-language.md
+[tool] status: Completed
+[tool] Creating requirements.md
+[tool] status: Completed
+[tool] Creating design.md
+[tool] status: Completed
+[tool] Creating tasks.md
+[tool] status: Completed
+Now I'll create the two hook files:
+[tool] Creating test-on-save.json
+[tool] status: Completed
+[tool] Creating secret-guard.mjs
+[tool] status: Completed
+[tool] Creating secret-guard.json
+[tool] status: Completed
+Perfect! Let me verify all files are in place:
+[tool] Reading listing .kiro
+[tool] status: Completed
+[tool] Reading listing steering, listing ghost-from-the-past, listing hooks
+[tool] status: Completed
+Excellent! All seven files are in place. Let me verify the content of a couple to ensure completeness:
+[tool] Reading requirements.md:1-30, design.md:1-30
+[tool] status: Completed
+Perfect. Now let me create a summary:
+
+---
+
+## Summary
+
+I've completed spec-driven planning for **Ghost from the Past** by creating seven authoritative files in `.kiro/`:
+
+1. **`.kiro/steering/product.md`** — Product vision, users, privacy promise, and non-goals (no central server, no Chrome Web Store, free tier only).
+
+2. **`.kiro/steering/tech.md`** — Technology stack and conventions: MV3 extension in plain ES2022 with UMD libs (Readability, Turndown), Worker in TypeScript with D1/Vectorize/Workers AI graceful degradation, MCP SDK stateless per-request transport, testing commands, security rules (never log secrets, timingSafeEqual auth, never commit .dev.vars).
+
+3. **`.kiro/steering/design-language.md`** — Visual & interaction design: off-white/black palette (no colour accents), squircle shapes (14px, 999px pills, 12px buttons), system sans-serif stack, 4px grid spacing, bedsheet ghost icon, accessibility standards, friendly-spooky tone.
+
+4. **`.kiro/specs/ghost-from-the-past/requirements.md`** — 22 numbered requirement groups covering capture (R1–R3), queue/sync (R4–R7), popup/options (R8–R10), worker ingest (R11–R16), MCP server (R17–R18), CORS (R19), testing (R20), deployment (R21–R22), all in EARS-style ("WHEN … THEN …") format.
+
+5. **`.kiro/specs/ghost-from-the-past/design.md`** — System architecture diagram (browser → Worker → D1/Vectorize/Workers AI), component & module list with function signatures, D1 schema with indexes, API message formats (ingest request/response, MCP tool JSON), error handling, security/privacy design, testing strategy, correctness properties.
+
+6. **`.kiro/specs/ghost-from-the-past/tasks.md`** — 10-phase implementation plan with ~40 subtasks (scaffold → worker libs → storage → ingest/search → MCP → extension libs → content/background → UI → icons → e2e/docs), each referencing requirement IDs and building sequentially.
+
+7. **`.kiro/hooks/test-on-save.json`** and **`.kiro/hooks/secret-guard.json`** with **`.kiro/hooks/secret-guard.mjs`** — Automated test running on TypeScript/JS saves and pre-commit secret scanning (GHOST_SECRET, Bearer tokens, CLOUDFLARE_API_TOKEN, .dev.vars patterns).
+
+All files follow the brief precisely: independent extension/ and worker/ (no root workspaces), free-tier constraints (5M vector dims ≈ 13k chunks), graceful degradation, MCP Streamable HTTP transport, timeinsafe comparison, no analytics, and .kiro/ always included. The spec is concrete, focused, and ready for implementation.
+EXIT 0

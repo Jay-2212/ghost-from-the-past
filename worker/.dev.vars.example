@@ -1,0 +1,3 @@
+# Local development secrets (never commit .dev.vars; copy from .dev.vars.example)
+# Generate GHOST_SECRET with: openssl rand -hex 32
+GHOST_SECRET=generate_with_openssl_rand_hex_32

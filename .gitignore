@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.dev.vars
+*.log
+dist/
+shots/*.tmp
+
+# Keep .kiro/ and never ignore it
+!.kiro/
+!docs/kiro-logs/*.log

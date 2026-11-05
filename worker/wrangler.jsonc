@@ -1,0 +1,55 @@
+{
+  "name": "ghost-from-the-past",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "ghost-memory",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "vectorize": [
+    {
+      "binding": "VECTORS",
+      "index_name": "ghost-memory"
+    }
+  ],
+
+  "ai": {
+    "binding": "AI"
+  },
+
+  "vars": {
+    "EMBED_MODEL": "@cf/baai/bge-small-en-v1.5",
+    "MAX_CHUNKS_PER_PAGE": "8"
+  },
+
+  "observability": {
+    "enabled": true
+  },
+
+  "env": {
+    "local": {
+      "name": "ghost-from-the-past-local",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ghost-memory",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vars": {
+        "EMBED_MODE": "mock",
+        "VECTOR_MODE": "d1",
+        "EMBED_MODEL": "@cf/baai/bge-small-en-v1.5",
+        "MAX_CHUNKS_PER_PAGE": "8"
+      }
+    }
+  }
+}

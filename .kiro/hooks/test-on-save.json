@@ -1,0 +1,29 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "test-on-save-worker",
+      "description": "Run worker vitest on save of TypeScript files in worker/src/",
+      "trigger": "PostFileSave",
+      "matcher": {
+        "filePath": "worker/src/**/*.ts"
+      },
+      "action": {
+        "type": "command",
+        "command": "cd worker && npx vitest run --reporter=dot"
+      }
+    },
+    {
+      "name": "test-on-save-extension",
+      "description": "Run extension node:test on save of JavaScript files in extension/lib/",
+      "trigger": "PostFileSave",
+      "matcher": {
+        "filePath": "extension/lib/**/*.js"
+      },
+      "action": {
+        "type": "command",
+        "command": "node --test extension/test"
+      }
+    }
+  ]
+}

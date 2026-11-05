@@ -1,0 +1,14 @@
+{
+  "name": "ghost-from-the-past",
+  "version": "1.0.0",
+  "description": "A personal, privacy-first browser memory for knowledge workers.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test:e2e": "node tests/e2e/run.mjs"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.0",
+    "playwright-core": "^1.48.0"
+  }
+}
