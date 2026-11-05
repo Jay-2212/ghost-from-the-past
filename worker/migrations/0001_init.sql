@@ -16,20 +16,22 @@ CREATE TABLE IF NOT EXISTS pages (
   active_ms INTEGER NOT NULL DEFAULT 0,
   visits INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'article',
+  meta TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_pages_first_seen ON pages(first_seen);
 CREATE INDEX IF NOT EXISTS idx_pages_domain ON pages(domain);
 CREATE INDEX IF NOT EXISTS idx_pages_last_seen ON pages(last_seen);
+CREATE INDEX IF NOT EXISTS idx_pages_kind ON pages(kind);
 
 -- Chunks table: stores text chunks with reference to parent page
 CREATE TABLE IF NOT EXISTS chunks (
   id TEXT PRIMARY KEY,
   page_id TEXT NOT NULL,
   idx INTEGER NOT NULL,
-  text TEXT NOT NULL,
-  FOREIGN KEY (page_id) REFERENCES pages(id)
+  text TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_chunks_page_id ON chunks(page_id);
@@ -46,9 +48,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(
 CREATE TABLE IF NOT EXISTS chunk_vectors (
   chunk_id TEXT PRIMARY KEY,
   page_id TEXT NOT NULL,
-  vector TEXT NOT NULL,
-  FOREIGN KEY (page_id) REFERENCES pages(id),
-  FOREIGN KEY (chunk_id) REFERENCES chunks(id)
+  vector TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_chunk_vectors_page_id ON chunk_vectors(page_id);

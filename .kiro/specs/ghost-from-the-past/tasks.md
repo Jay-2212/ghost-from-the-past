@@ -76,13 +76,46 @@
   - [ ] 9.3 Run build-icons.mjs and commit PNG files
   - _Requirements: R10_
 
+## Phase 11: Extraction Pipeline & Site Extractors
+- [ ] 11. Implement extraction pipeline and site extractors
+  - [ ] 11.1 Create `extension/lib/pipeline.js` (guard, pick extractor, extract, post-process, return kind+meta)
+  - [ ] 11.2 Create `extension/lib/extractors/youtube.js`, `reddit.js`, `x.js`, `github.js`, `wikipedia.js`, `stackexchange.js`, `product.js`, `news.js`, `docs.js`, `generic.js` with `match(url)` and `extract(doc, url, ctx)` interface
+  - [ ] 11.3 Create `extension/test/fixtures/` with sample HTML per extractor (article, Reddit post, X thread, GitHub repo, etc.)
+  - [ ] 11.4 Create unit tests `extension/test/pipeline.test.mjs`, `extractors.test.mjs` (verify kind, title, markdown output per extractor)
+  - _Requirements: R25, R26_
+
+## Phase 12: Onboarding & Worker Landing Page
+- [ ] 12. Implement onboarding and connect handshake
+  - [ ] 12.1 Create `extension/onboarding.html`, `onboarding.css`, `onboarding.js` (3 screens: welcome, copy secret + deploy, all done)
+  - [ ] 12.2 Wire `chrome.runtime.onInstalled` handler to open onboarding tab on install
+  - [ ] 12.3 Add pending offer logic in `background.js`: detect postMessage from landing page, store offer, focus onboarding tab, prompt user
+  - [ ] 12.4 Create worker landing page route `GET /` returning HTML with `<meta name="ghost-from-the-past" content="worker">`, "Your ghost is alive", Connect button (postMessage)
+  - [ ] 12.5 Add to worker routes: OPTIONS preflight (before auth); `GET /` content-negotiation (HTML vs JSON)
+  - _Requirements: R23, R27.1, R20.1_
+
+## Phase 13: Privacy Defaults & Don't Remember Popup
+- [ ] 13. Implement privacy blocklist and per-site forget button
+  - [ ] 13.1 Update `extension/lib/blocklist.js` DEFAULT_BLOCKLIST with categories (browser/internal, auth, email, payment, health, government, etc.) including private IP ranges in code
+  - [ ] 13.2 Wire "Don't remember this site" button in `popup.js`: add hostname to blocklist, delete queued entries, show undo for 5s
+  - [ ] 13.3 Update Options page to display blocklist textarea with "Reset to defaults" button
+  - [ ] 13.4 Update `lib/settings.js` to store blocklist in `chrome.storage.local` (not sync; quota limit)
+  - _Requirements: R24, R6.1_
+
+## Phase 14: Live Extractor Check Tests
+- [ ] 14. Create live integration tests for extractors
+  - [ ] 14.1 Create `tests/extractors/live.mjs` (Playwright headless Chromium, inject lib files, run pipeline on real URLs)
+  - [ ] 14.2 Test one real page per extractor: YouTube video, Reddit thread, X post, GitHub repo, Wikipedia article, StackOverflow question, Amazon product, news article, MDN docs
+  - [ ] 14.3 Write results to `tests/extractors/out/{name}.md` + summary table (chars, kind, key fields, pass/fail)
+  - [ ] 14.4 Handle "blocked" status for sites that reject headless/anonymous access
+  - _Requirements: R21.3_
+
 ## Phase 10: E2E Tests & Documentation
 - [ ] 10. Test automation and documentation
   - [ ] 10.1 Create `tests/e2e/run.mjs` (wrangler dev local, Playwright headless, configure Worker, visit pages, sync, MCP queries, forget, screenshots)
   - [ ] 10.2 Create `README.md` (hero, vision, setup, Deploy button, manual install, MCP clients, prompts, Privacy, free limits, Kiro usage, licence)
-  - [ ] 10.3 Create `.kiro/hooks/test-on-save.json` and `.kiro/hooks/secret-guard.json` with implementations
+  - [ ] 10.3 Create `.kiro/hooks/test-on-save.mjs` and `.kiro/hooks/secret-guard.mjs` with implementations
   - [ ] 10.4 Update `THIRD_PARTY.md` with vendor licences
-  - _Requirements: R20.3, R21, R22_
+  - _Requirements: R21.3, R29_
 
 ---
 *Each task references requirement IDs. Build and test in sequence; each step produces testable, isolated output.*

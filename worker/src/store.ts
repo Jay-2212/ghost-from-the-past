@@ -48,8 +48,9 @@ export class VectorizeStore implements VectorStore {
   }
 
   async query(values: number[], topK: number): Promise<VectorQueryResult[]> {
-    const matches = await this.vectorize.query(values, { topK });
-    return matches.map((m: any) => ({
+    // Hark fix: Vectorize query() resolves to {matches, count}, not an array.
+    const res = await this.vectorize.query(values, { topK });
+    return (res?.matches ?? []).map((m: any) => ({
       id: m.id,
       score: m.score
     }));
@@ -70,15 +71,11 @@ export class D1VectorStore implements VectorStore {
   async upsert(items: VectorStoreItem[]): Promise<void> {
     if (items.length === 0) return;
 
-    const statements = items.map(item => ({
-      sql: `
-        INSERT OR REPLACE INTO chunk_vectors (chunk_id, page_id, vector)
-        VALUES (?, ?, ?)
-      `,
-      params: [item.id, item.pageId, JSON.stringify(item.values)]
-    }));
-
-    await this.db.batch(statements);
+    // Hark fix: D1 batch() takes prepared statements, not {sql, params} objects.
+    const stmt = this.db.prepare(
+      'INSERT OR REPLACE INTO chunk_vectors (chunk_id, page_id, vector) VALUES (?, ?, ?)'
+    );
+    await this.db.batch(items.map(item => stmt.bind(item.id, item.pageId, JSON.stringify(item.values))));
   }
 
   async query(values: number[], topK: number): Promise<VectorQueryResult[]> {

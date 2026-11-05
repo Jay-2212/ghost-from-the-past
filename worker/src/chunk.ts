@@ -1,122 +1,131 @@
 /**
- * Markdown-aware chunking with heading splits, blank lines, target/max sizes, and overlap.
- * Pure function (no Cloudflare globals) for testability in Node.
+ * Markdown-aware chunking. Pure function (no Cloudflare globals) so it unit-tests in Node.
+ *
+ * - splits into blocks on blank lines and headings, keeping fenced code blocks whole
+ * - greedily packs blocks to ~TARGET chars (hard MAX), oversized blocks are hard-split
+ * - consecutive chunks overlap by ~OVERLAP chars (tail of the previous chunk)
+ * - each chunk remembers its nearest heading
+ * - at most maxChunks chunks are returned (the first ones)
  */
 
 export interface Chunk {
   idx: number;
   text: string;
-  heading?: string;
+  heading: string;
 }
 
-/**
- * Split markdown into chunks.
- * - Target: ~900 chars
- * - Max: 1200 chars
- * - Overlap: 120 chars between consecutive chunks
- * - Respects headings and blank lines as split points
- * - Keeps at most maxChunks chunks (first ones)
- */
-export function chunkMarkdown(
-  markdown: string,
-  title: string,
-  maxChunks: number = 8
-): Chunk[] {
-  if (!markdown || markdown.trim().length === 0) {
-    return [];
-  }
+export const TARGET = 900;
+export const MAX = 1200;
+export const OVERLAP = 120;
 
-  const TARGET = 900;
-  const MAX = 1200;
-  const OVERLAP = 120;
+interface Block {
+  text: string;
+  heading: string;
+}
 
-  // Split by headings and blank lines
-  const lines = markdown.split('\n');
-  const segments: string[] = [];
-  let currentSegment = '';
+function toBlocks(markdown: string, title: string): Block[] {
+  const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
+  const blocks: Block[] = [];
+  let heading = title;
+  let buf: string[] = [];
+  let inFence = false;
+
+  const flush = () => {
+    const text = buf.join('\n').trim();
+    if (text) blocks.push({ text, heading });
+    buf = [];
+  };
 
   for (const line of lines) {
-    const isHeading = line.startsWith('#');
-    const isBlank = line.trim().length === 0;
-
-    if ((isHeading || isBlank) && currentSegment.trim().length > 0) {
-      segments.push(currentSegment.trim());
-      currentSegment = '';
-      if (isHeading) {
-        currentSegment = line;
-      }
-    } else {
-      if (currentSegment) {
-        currentSegment += '\n';
-      }
-      currentSegment += line;
+    if (/^\s*(```|~~~)/.test(line)) {
+      if (!inFence) flush();
+      inFence = !inFence;
+      buf.push(line);
+      if (!inFence) flush();
+      continue;
     }
+    if (inFence) {
+      buf.push(line);
+      continue;
+    }
+    const h = line.match(/^#{1,6}\s+(.*)$/);
+    if (h) {
+      flush();
+      heading = h[1].trim() || heading;
+      buf.push(line);
+      continue;
+    }
+    if (line.trim() === '') {
+      flush();
+      continue;
+    }
+    buf.push(line);
+  }
+  flush();
+  return blocks;
+}
+
+function hardSplit(text: string, size: number): string[] {
+  const out: string[] = [];
+  let rest = text;
+  while (rest.length > size) {
+    let cut = rest.lastIndexOf(' ', size);
+    if (cut < size * 0.5) cut = size;
+    out.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) out.push(rest);
+  return out;
+}
+
+function tail(text: string, n: number): string {
+  if (text.length <= n) return text;
+  const t = text.slice(-n);
+  const sp = t.indexOf(' ');
+  return sp > 0 && sp < n / 2 ? t.slice(sp + 1) : t;
+}
+
+export function chunkMarkdown(markdown: string, title = '', maxChunks = 8): Chunk[] {
+  if (!markdown || !markdown.trim() || maxChunks <= 0) return [];
+  const blocks: Block[] = [];
+  for (const b of toBlocks(markdown, title)) {
+    if (b.text.length <= MAX) blocks.push(b);
+    else for (const piece of hardSplit(b.text, TARGET)) blocks.push({ text: piece, heading: b.heading });
   }
 
-  if (currentSegment.trim().length > 0) {
-    segments.push(currentSegment.trim());
-  }
-
-  // Pack segments into chunks
   const chunks: Chunk[] = [];
-  let chunkText = '';
-  let chunkHeading = title;
+  let cur = '';
+  let curHeading = blocks[0]?.heading ?? title;
+  let curHasNew = false; // does `cur` contain anything beyond the overlap?
 
-  for (const segment of segments) {
-    // Extract heading if this segment starts with one
-    const headingMatch = segment.match(/^(#{1,6})\s+(.+?)(?:\n|$)/);
-    if (headingMatch) {
-      chunkHeading = headingMatch[2];
+  const emit = () => {
+    if (!cur.trim() || !curHasNew) return;
+    chunks.push({ idx: chunks.length, text: cur.trim(), heading: curHeading });
+    cur = tail(cur, OVERLAP);
+    curHasNew = false;
+  };
+
+  for (const b of blocks) {
+    if (chunks.length >= maxChunks) break;
+    const joined = cur ? `${cur}\n\n${b.text}` : b.text;
+    if (joined.length > MAX && curHasNew) {
+      emit();
+      if (chunks.length >= maxChunks) break;
+      curHeading = b.heading;
+      cur = cur ? `${cur}\n\n${b.text}` : b.text;
+      if (cur.length > MAX) cur = b.text; // overlap would overflow; drop it
+    } else {
+      if (!curHasNew) curHeading = b.heading;
+      cur = joined;
     }
-
-    const segmentLength = segment.length;
-
-    // If adding this segment would exceed MAX, flush current chunk
-    if (chunkText.length + segmentLength > MAX) {
-      if (chunkText.length > 0) {
-        chunks.push({
-          idx: chunks.length,
-          text: `"${title}"\n${chunkHeading}\n${chunkText}`.trim(),
-          heading: chunkHeading
-        });
-
-        // Apply overlap: keep last OVERLAP chars of chunkText
-        chunkText = chunkText.length > OVERLAP ? chunkText.slice(-OVERLAP) : '';
-      }
-    }
-
-    chunkText += (chunkText ? '\n' : '') + segment;
-
-    // If we're over TARGET and have a reasonable chunk, consider flushing
-    if (chunkText.length > TARGET) {
-      // Look for last blank line or heading boundary to split cleanly
-      const lastNewline = chunkText.lastIndexOf('\n');
-      if (lastNewline > TARGET / 2) {
-        const beforeNewline = chunkText.slice(0, lastNewline);
-        chunks.push({
-          idx: chunks.length,
-          text: `"${title}"\n${chunkHeading}\n${beforeNewline}`.trim(),
-          heading: chunkHeading
-        });
-
-        const afterNewline = chunkText.slice(lastNewline + 1);
-        chunkText = afterNewline.length > OVERLAP ? afterNewline.slice(-OVERLAP) + '\n' + afterNewline : afterNewline;
-      }
-    }
-
-    if (chunks.length >= maxChunks) {
-      break;
-    }
+    curHasNew = true;
+    if (cur.length >= TARGET) emit();
   }
-
-  // Flush remaining
-  if (chunkText.trim().length > 0) {
-    chunks.push({
-      idx: chunks.length,
-      text: `"${title}"\n${chunkHeading}\n${chunkText}`.trim(),
-      heading: chunkHeading
-    });
-  }
-
+  if (chunks.length < maxChunks) emit();
   return chunks.slice(0, maxChunks);
+}
+
+/** Text sent to the embedder for a chunk. */
+export function embedText(title: string, chunk: Chunk): string {
+  return `${title}\n${chunk.heading && chunk.heading !== title ? chunk.heading + '\n' : ''}${chunk.text}`.slice(0, 2000);
 }

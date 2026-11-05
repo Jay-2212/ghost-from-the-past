@@ -35,7 +35,7 @@
 - R5.3: WHEN sync completes THEN the system SHALL update stats: `pagesToday` (distinct URLs captured today, local date), `lastSyncAt`, `lastSyncCount`, `lastError`, `totalSynced`
 
 **R6. Settings & Blocklist**
-- R6.1: WHEN settings are persisted THEN the system SHALL store in `chrome.storage.sync`: `workerUrl, paused, minDwellMs, redactEmails, blocklist`; `GHOST_SECRET` stored separately in `chrome.storage.local`
+- R6.1: WHEN settings are persisted THEN the system SHALL store in `chrome.storage.sync`: `workerUrl, paused, minDwellMs, redactEmails`; `blocklist` and `GHOST_SECRET` stored in `chrome.storage.local` (quota limits)
 - R6.2: WHEN blocklist is evaluated THEN the system SHALL match patterns (glob-ish with `*` wildcard) against hostname and full URL; bare hostname also matches subdomains
 - R6.3: WHEN capture URL matches blocklist OR protocol not http/https OR paused OR incognito THEN skip
 
@@ -111,20 +111,73 @@
 ## CORS
 
 **R19. CORS Headers**
-- R19.1: WHEN `OPTIONS *` THEN respond with headers allowing `Authorization, Content-Type, Mcp-Session-Id, Mcp-Protocol-Version`
+- R19.1: WHEN `OPTIONS *` THEN respond without auth check, with headers allowing `Authorization, Content-Type, Mcp-Session-Id, Mcp-Protocol-Version`
+
+## Worker Routes & Methods
+
+**R20. Route Handling**
+- R20.1: WHEN `GET /` with `Accept: text/html` THEN return landing page HTML; when `Accept: application/json` THEN return JSON health
+- R20.2: WHEN `/mcp` route is called THEN support ALL methods (GET, POST, DELETE, OPTIONS) for Streamable HTTP protocol
 
 ## Testing
 
-**R20. Test Coverage**
-- R20.1: WHEN `node --test extension/test` THEN verify extraction (article survives, nav/footer/ads removed, markdown conversion), redaction (Luhn cards, secrets, emails on/off), blocklist matching
-- R20.2: WHEN `cd worker && npm run test` (vitest) THEN verify chunk sizes/overlap/max chunks, URL normalisation, RRF fusion, HashEmbedder determinism/normalisation, auth compare
-- R20.3: WHEN `node tests/e2e/run.mjs` THEN launch wrangler dev (local env, apply migrations), Playwright headless, configure Worker + secret, visit 3 real pages, sync, query MCP tools, forget, verify deletion, save screenshots
+**R21. Test Coverage**
+- R21.1: WHEN `node --test extension/test` THEN verify extraction (article survives, nav/footer/ads removed, markdown conversion), redaction (Luhn cards, secrets, emails on/off), blocklist matching
+- R21.2: WHEN `cd worker && npm run test` (vitest) THEN verify chunk sizes/overlap/max chunks, URL normalisation, RRF fusion, HashEmbedder determinism/normalisation, auth compare
+- R21.3: WHEN `node tests/e2e/run.mjs` THEN launch wrangler dev (local env, apply migrations), Playwright headless, configure Worker + secret, visit 3 real pages, sync, query MCP tools, forget, verify deletion, save screenshots
+
+## Onboarding
+
+**R23. Onboarding Flow**
+- R23.1: WHEN extension is installed THEN open onboarding tab automatically (chrome.runtime.onInstalled reason `install`); also reachable from popup when not configured
+- R23.2: WHEN onboarding starts THEN extension generates random 32-byte secret (crypto.getRandomValues) and stores in `chrome.storage.local.secret` (never in sync storage)
+- R23.3: WHEN onboarding screen 1 displays THEN show welcome message "Hello and welcome. Hope you're ready to meet your ghost from the past" with button **I am!**
+- R23.4: WHEN onboarding screen 2 displays THEN explain "Your memories live in your own Cloudflare account. Click Deploy, Cloudflare builds your ghost in ~1 minute, then come back here"; show secret with **Copy secret** button (copies to clipboard); button **Deploy to Cloudflare** opens deploy URL in new tab and copies secret
+- R23.5: WHEN Worker landing page (`GET /`) is visited THEN show "Your ghost is alive" + `<meta name="ghost-from-the-past" content="worker">`, **Connect to extension** button (postMessage to content script)
+- R23.6: WHEN content script detects landing page THEN forward postMessage `{source:'ghost-worker', type:'connect'}` to background as `{type:'ghost:connect-offer', workerUrl}`; background stores as pending offer (https only, only before onboarding complete)
+- R23.7: WHEN onboarding detects pending offer THEN show "Connect to https://…workers.dev?" with **Yes, connect** button (explicit user confirmation prevents hostile redirect)
+- R23.8: WHEN connection test fails THEN show fallback paste fields: Worker URL + secret, button **Test connection** (`GET {url}/api/stats` with bearer)
+- R23.9: WHEN onboarding completes THEN show screen 3 "All done! I'll be watching you" with ghost SVG + "Pages remembered: 0"; set `settings.onboarded = true`
+
+**R24. Privacy Defaults & Blocklist**
+- R24.1: WHEN blocklist is stored THEN use `chrome.storage.local` (not sync, to avoid quota exceed); store as array of pattern strings with category comments
+- R24.2: WHEN blocklist initializes THEN include categories: Browser/internal/local (chrome://, localhost, 127.0.0.1, 0.0.0.0, [::1], *.local, 10.*, 192.168.*, 172.16–31.*); Auth/login (accounts.google.com, login.*, auth.*, paths containing /login, /signin, /oauth, /2fa, /password); Email/messaging (mail.google.com, outlook.*, discord.com/channels/*, etc.); Password managers (1password, bitwarden, lastpass, etc.); Banking/payments (host patterns *bank*, *netbanking*, paypal, stripe, paths /checkout, /payment, /wallet); Health portals; Government/ID; Incognito (never, manifest + runtime)
+- R24.3: WHEN blocklist pattern is evaluated THEN match against hostname (with private IP ranges in code, not glob), full URL, paths; bare hostname matches subdomains
+- R24.4: WHEN user clicks "Don't remember this site" in popup THEN add current hostname to blocklist, delete queued entries for that host, show "Forgotten locally. Use the forget tool to remove it from your ghost too" + 5s undo
+
+**R25. Extraction Pipeline**
+- R25.1: WHEN page loads THEN run pipeline: (1) Guard: http/https, not blocklisted, not incognito, not login form (has visible input[type=password] and < 300 words → skip); (2) Pick extractor: match URL with site extractors else generic; (3) Extract with site extractor, fallback to generic if error or < 120 chars; (4) Post-process: dedupe lines, strip boilerplate (cookie/consent/subscribe/ads), collapse whitespace, cap 200k chars; (5) Return {kind, title, markdown, excerpt, lang, meta}
+- R25.2: WHEN post-processing THEN prepend metadata header `# {title}\n\n> {kind} · {domain} · {author/channel if any} · {published if any}\n\n`
+
+**R26. Site Extractors**
+- R26.1: WHEN URL matches youtube.com, youtu.be, m.youtube.com THEN extract via `ytInitialPlayerResponse` JSON (title, channel, date, description); fetch transcript from captionTracks[].baseUrl (prefer English manual, else ASR, else first) as `&fmt=json3`, flatten to paragraphs with `[mm:ss]` stamps, cap 60k chars
+- R26.2: WHEN URL matches reddit.com/r/*/comments/* THEN fetch same-origin `{url}.json?limit=40&sort=top` → title, author, score, selftext + top 15 comments (depth ≤ 2); kind `reddit-thread`
+- R26.3: WHEN URL matches x.com/*/status/*, twitter.com THEN DOM parse article[data-testid="tweet"] → author, text, time; first article = main post, next ≤ 10 = thread/replies; kind `x-post`
+- R26.4: WHEN URL matches github.com THEN repo root extract description/topics/stars/README; issues/PRs extract title/state/author/body/comments (≤ 20); kinds `github-repo`, `github-issue`, `github-pr`
+- R26.5: WHEN URL matches *.wikipedia.org/wiki/* THEN extract #mw-content-text (minus references, TOC, navbox, infobox at top); kind `wikipedia-article`
+- R26.6: WHEN URL matches stackoverflow.com, *.stackexchange.com, superuser.com, serverfault.com, askubuntu.com THEN extract question + accepted answer (or top-voted) + next 2 answers; kind `stackoverflow-question`
+- R26.7: WHEN URL matches amazon.*/dp/*, flipkart.com/*/p/*, or page has JSON-LD @type: Product THEN extract name, price+currency, rating, brand, specs (≤ 40 rows); kind `product`
+- R26.8: WHEN page has JSON-LD @type: NewsArticle/Article/BlogPosting or og:type=article THEN extract headline, author, datePublished; kind `news-article`
+- R26.9: WHEN URL matches developer.mozilla.org, docs.*, *.readthedocs.io, developers.cloudflare.com THEN extract main/article/[role=main] content, preserve code blocks; kind `docs-page`
+- R26.10: WHEN no site extractor matches THEN use generic (Readability + Turndown); kind `article`
+
+**R27. Worker Landing Page & Kind/Meta Storage**
+- R27.1: WHEN `GET /` with `Accept: text/html` THEN return HTML page "Your ghost is alive" + `<meta name="ghost-from-the-past" content="worker">` + **Connect to extension** button (postMessage) + MCP URL snippet; never show secret or memory
+- R27.2: WHEN pages table is created THEN add columns `kind TEXT`, `meta TEXT` (JSON); ingest accepts and stores these
+- R27.3: WHEN ingest response is returned THEN include `kind` per page
+- R27.4: WHEN MCP list_pages/search_memory are called THEN allow optional `kind` filter
 
 ## Deployment
 
-**R21. Deploy Button**
-- R21.1: WHEN Deploy button is clicked THEN link to https://deploy.workers.cloudflare.com/?url=https://github.com/Jay-2212/ghost-from-the-past/tree/main/worker
+**R28. Deploy Button**
+- R28.1: WHEN Deploy button is clicked THEN link to https://deploy.workers.cloudflare.com/?url=https://github.com/Jay-2212/ghost-from-the-past/tree/main/worker
 
-**R22. Documentation**
-- R22.1: WHEN README is rendered THEN include hero line + icon, what it is, 2-minute setup (Deploy button, set GHOST_SECRET, load extension unpacked, paste URL + secret, test), manual alternative, MCP client setup (Claude, Cursor, Kiro), example prompts, Privacy section, free-tier limits, development & tests, Kiro usage, licence
-- R22.2: WHEN THIRD_PARTY.md exists THEN list vendored libraries (@mozilla/readability, turndown) with original licence headers
+**R29. Documentation**
+- R29.1: WHEN README is rendered THEN include hero line + icon, what it is, 2-minute setup (Deploy button, set GHOST_SECRET, load extension unpacked, paste URL + secret, test), manual alternative, MCP client setup (Claude, Cursor, Kiro), example prompts, Privacy section, free-tier limits, development & tests, Kiro usage, licence
+- R29.2: WHEN THIRD_PARTY.md exists THEN list vendored libraries (@mozilla/readability, turndown) with original licence headers
+
+## Corrections & Clarifications
+
+- **R6.1 fix**: blocklist stored in `chrome.storage.local`, not sync (quota limit)
+- **R12.3/R12.4 fix**: ingest statuses are `created|merged|updated|skipped` (no 409 Conflict)
+- **R19.1 fix**: `OPTIONS` before auth; all methods `/mcp` (GET, POST, DELETE, OPTIONS)
