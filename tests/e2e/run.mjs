@@ -87,7 +87,7 @@ async function main() {
     await ob.waitForSelector('#iam');
     await ob.screenshot({ path: join(SHOTS, 'onboarding-1-welcome.png') });
     await ob.click('#iam');
-    await ob.waitForFunction(() => document.getElementById('secretOut').textContent.length === 64);
+    await ob.waitForFunction(() => document.getElementById("secretOut").textContent.length === 64, null, { timeout: 15000 });
     const secret = REMOTE ? process.env.GHOST_SECRET : (await ob.textContent('#secretOut')).trim();
     check('extension generated a 256-bit secret', /^[0-9a-f]{64}$/.test(secret || '') || !!REMOTE);
     await ob.screenshot({ path: join(SHOTS, 'onboarding-2-cloudflare.png') });

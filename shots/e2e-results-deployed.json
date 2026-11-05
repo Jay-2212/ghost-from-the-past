@@ -1,0 +1,101 @@
+{
+  "base": "https://ghost-from-the-past-test.jb-brain.workers.dev",
+  "at": "2026-11-05T07:37:43.078Z",
+  "results": [
+    {
+      "name": "extension service worker loads",
+      "ok": true,
+      "detail": "ncleodjmabaffkbepnjpgomkbfhblpnb"
+    },
+    {
+      "name": "onboarding opens on install",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "extension generated a 256-bit secret",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "remote worker reachable",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "connection test passes -> \"All done! I'll be watching you.\"",
+      "ok": true,
+      "detail": "Connected to https://ghost-from-the-past-test.jb-brain.workers.dev · 0 page(s) remembered so far."
+    },
+    {
+      "name": "options: test connection",
+      "ok": true,
+      "detail": "Connected · 0 page(s) remembered"
+    },
+    {
+      "name": "pages captured into the local queue",
+      "ok": true,
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API | https://en.wikipedia.org/wiki/Ghost | https://example.com/ | https://github.com/mozilla/readability"
+    },
+    {
+      "name": "blocklisted page (accounts.google.com) not captured",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "popup \"Sync now\" sends the queue",
+      "ok": false,
+      "detail": "Last sync: never"
+    },
+    {
+      "name": "records arrived in D1",
+      "ok": true,
+      "detail": "4 pages, 26 chunks, kinds [{\"kind\":\"article\",\"pages\":1},{\"kind\":\"docs-page\",\"pages\":1},{\"kind\":\"github-repo\",\"pages\":1},{\"kind\":\"wikipedia-article\",\"pages\":1}]"
+    },
+    {
+      "name": "MCP lists the tools",
+      "ok": true,
+      "detail": "forget,get_page,list_pages,memory_stats,search_memory"
+    },
+    {
+      "name": "search_memory finds the Wikipedia ghost article",
+      "ok": true,
+      "detail": "https://en.wikipedia.org/wiki/Ghost | https://github.com/mozilla/readability | https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
+    },
+    {
+      "name": "search_memory with domain filter finds MDN",
+      "ok": true,
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (4s, docs-page)"
+    },
+    {
+      "name": "list_pages for today",
+      "ok": true,
+      "detail": "4 pages"
+    },
+    {
+      "name": "get_page returns full markdown",
+      "ok": true,
+      "detail": "94725 chars"
+    },
+    {
+      "name": "forget refuses without confirm",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "forget deletes a page",
+      "ok": true,
+      "detail": "{\"deleted\":1}"
+    },
+    {
+      "name": "forgotten page is gone",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "MCP without the secret is rejected (401)",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}

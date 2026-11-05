@@ -1,0 +1,96 @@
+{
+  "search1": {
+    "results": [
+      {
+        "id": "2f71f2e7cbadc123",
+        "url": "https://en.wikipedia.org/wiki/Ghost",
+        "title": "Ghost",
+        "domain": "en.wikipedia.org",
+        "kind": "wikipedia-article",
+        "meta": {
+          "lang": "en",
+          "site": "Wikipedia"
+        },
+        "firstSeen": "2026-11-05T07:37:11.692Z",
+        "lastSeen": "2026-11-05T07:37:16.175Z",
+        "activeMs": 4399,
+        "timeSpent": "4s",
+        "visits": 1,
+        "snippet": "# Ghost > Wikipedia article · en.wikipedia.org In [folklore](https://en.wikipedia.org/wiki/Folklore \"Folklore\"), a **ghost** is the [soul](https://en.wikipedia.org/wiki/Soul \"Soul\") or [spirit](https://en.wikipedia.org/wiki/Spirit_\\(supernatural_entity\\) \"Spirit (supernatural entity)\") of a dead [person](https://en.w…",
+        "score": 0.03252
+      },
+      {
+        "id": "0922ceadb9edce27",
+        "url": "https://github.com/mozilla/readability",
+        "title": "mozilla/readability: A standalone version of the readability lib. Contribute to mozilla/readability development by …",
+        "domain": "github.com",
+        "kind": "github-repo",
+        "meta": {
+          "repo": "mozilla/readability"
+        },
+        "firstSeen": "2026-11-05T07:37:23.027Z",
+        "lastSeen": "2026-11-05T07:37:27.684Z",
+        "activeMs": 4619,
+        "timeSpent": "4s",
+        "visits": 1,
+        "snippet": "is added to the base link density threshold during the shadiness checks. This can be used to penalize nodes with a high link density or vice versa. ### `parse()` Returns an object containing the following properties: - `title`: article title; - `content`: HTML string of processed article content; - `textContent`: tex…",
+        "score": 0.02858
+      },
+      {
+        "id": "a8f48465fbb47497",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+        "title": "IndexedDB API",
+        "domain": "developer.mozilla.org",
+        "kind": "docs-page",
+        "meta": {
+          "section": "Web › Web APIs › IndexedDB API",
+          "site": "MDN Web Docs"
+        },
+        "firstSeen": "2026-11-05T07:37:16.616Z",
+        "lastSeen": "2026-11-05T07:37:21.559Z",
+        "activeMs": 4824,
+        "timeSpent": "4s",
+        "visits": 1,
+        "snippet": "fires events with the following custom interface: [`IDBVersionChangeEvent`](/en-US/docs/Web/API/IDBVersionChangeEvent) The `IDBVersionChangeEvent` interface indicates that the version of the database has changed, as the result of an [`IDBOpenDBRequest.onupgradeneeded`](/en-US/docs/Web/API/IDBOpenDBRequest/upgradeneed…",
+        "score": 0.02582
+      },
+      {
+        "id": "0f115db062b7c0dd",
+        "url": "https://example.com/",
+        "title": "Example Domain",
+        "domain": "example.com",
+        "kind": "article",
+        "meta": {},
+        "firstSeen": "2026-11-05T07:37:27.685Z",
+        "lastSeen": "2026-11-05T07:37:32.380Z",
+        "activeMs": 4654,
+        "timeSpent": "4s",
+        "visits": 1,
+        "snippet": "documentación sin necesidad de permiso. Esto no es un servicio; evitar utilizarlo para realizar pruebas o monitoreos. [Learn more](https://iana.org/help/example-domains)",
+        "score": 0.01449
+      }
+    ]
+  },
+  "search2": {
+    "results": [
+      {
+        "id": "a8f48465fbb47497",
+        "url": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API",
+        "title": "IndexedDB API",
+        "domain": "developer.mozilla.org",
+        "kind": "docs-page",
+        "meta": {
+          "section": "Web › Web APIs › IndexedDB API",
+          "site": "MDN Web Docs"
+        },
+        "firstSeen": "2026-11-05T07:37:16.616Z",
+        "lastSeen": "2026-11-05T07:37:21.559Z",
+        "activeMs": 4824,
+        "timeSpent": "4s",
+        "visits": 1,
+        "snippet": "…planation of key concepts. ## [Key concepts and usage](#key_concepts_and_usage) IndexedDB is a transactional database system, like an SQL-based Relational Database Management System (RDBMS). However, unlike SQL-based RDBMSes, which use fixed-column tables, IndexedDB is a JavaScript-based object-oriented database. Ind…",
+        "score": 0.03252
+      }
+    ]
+  }
+}
