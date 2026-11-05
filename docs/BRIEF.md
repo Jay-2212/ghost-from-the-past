@@ -242,3 +242,118 @@ Kiro (`.kiro/settings/mcp.json` with `url` + `headers`), Cursor (`~/.cursor/mcp.
 blocklist, redaction, pause, forget tool, delete everything = delete the Worker/D1/Vectorize),
 free-tier limits, development & tests, **How we used Kiro** (specs, steering, hooks, CLI sessions,
 reviewer loop), licence.
+
+---
+
+## 8. Addendum (Jay, 2026-11-05 12:19 IST) — onboarding, privacy defaults, extraction pipeline
+
+### 8.1 Onboarding (extension/onboarding.html/.css/.js)
+Opens automatically in a new tab on `chrome.runtime.onInstalled` (reason `install`), also reachable
+from the popup when not configured. Same design language, one step per screen, big centred card,
+step dots, keyboard accessible.
+1. **Welcome** — "Hello and welcome. Hope you're ready to meet your ghost from the past." Button: **I am!**
+2. **A few things before we begin** — 2–3 plain sentences: "Your memories live in your own
+   Cloudflare account, so nobody else ever holds them. Click Deploy, Cloudflare builds your private
+   ghost in about a minute, then come back here." The extension has already generated a random
+   secret (32 bytes hex via crypto.getRandomValues, stored in chrome.storage.local.secret) and shows
+   it with **Copy secret** ("paste this into the GHOST_SECRET box on the Deploy page"). Button
+   **Deploy to Cloudflare** copies the secret to the clipboard and opens
+   `https://deploy.workers.cloudflare.com/?url=https://github.com/Jay-2212/ghost-from-the-past/tree/main/worker`
+   in a new tab. Return path, easiest first:
+   a) The deployed Worker's landing page (`GET /` HTML) shows "Your ghost is alive" and a
+      **Connect to extension** button. The landing page never shows the secret. The extension's
+      content script recognises this page by `<meta name="ghost-from-the-past" content="worker">`
+      plus `/health` returning name `ghost-from-the-past`; clicking the button posts
+      `window.postMessage({source:'ghost-worker', type:'connect'})`; the content script forwards
+      `{type:'ghost:connect-offer', workerUrl: location.origin}` to the background, which stores it as
+      a *pending* offer (only while onboarding is not complete, only https origins) and focuses the
+      onboarding tab. The onboarding tab then shows "Connect to https://…workers.dev?" with
+      **Yes, connect** — the user must confirm (prevents a hostile page from redirecting data).
+   b) Fallback paste fields: Worker URL (+ secret field prefilled, editable) and **Test connection**.
+   Connection test = `GET {url}/api/stats` with the bearer secret → 200 JSON.
+3. **All done! I'll be watching you.** — a little ghost (the SVG mark, gentle float animation that
+   respects prefers-reduced-motion), "Pages remembered: 0", buttons **Open settings** / **Close**.
+   Sets `settings.onboarded = true`.
+
+### 8.2 Privacy defaults (lib/blocklist.js DEFAULT_BLOCKLIST, on from first run, editable in options)
+Group patterns with comments in the source; the options page shows the list (one per line) with
+"Reset to defaults". Categories:
+- Browser/internal & local: chrome://*, chrome-extension://*, edge://*, about:*, moz-extension://*, file://*, view-source:*, localhost, 127.0.0.1, 0.0.0.0, [::1], *.local, *.internal, *.lan, *.corp, *.intranet, 10.*, 192.168.*, 172.16.*–172.31.* (match private IPv4 ranges in code, not as globs).
+- Auth/login: accounts.google.com, login.*, signin.*, sign-in.*, auth.*, sso.*, id.*, idp.*, oauth.*, *.okta.com, *.auth0.com, login.microsoftonline.com, appleid.apple.com, and any URL path matching /(login|signin|sign-in|logon|oauth|authorize|sso|2fa|mfa|otp|password|reset-password)\b.
+- Email & messaging: mail.google.com, inbox.google.com, outlook.live.com, outlook.office.com, outlook.office365.com, mail.yahoo.com, mail.proton.me, *.protonmail.com, mail.zoho.com, *.fastmail.com, icloud.com/mail, web.whatsapp.com, web.telegram.org, messages.google.com, discord.com/channels/*, app.slack.com.
+- Password managers: 1password.com, *.1password.com, bitwarden.com, vault.bitwarden.com, lastpass.com, dashlane.com, keepersecurity.com, nordpass.com, proton.me/pass, passwords.google.com.
+- Banking, UPI & payments: *bank*.* hostnames (e.g. hdfcbank.com, onlinesbi.sbi, icicibank.com, axisbank.com, kotak.com, chase.com, bankofamerica.com, wellsfargo.com, barclays.*, hsbc.*), *netbanking*, paypal.com, stripe.com, checkout.*, pay.*, payments.*, pay.google.com, paytm.com, *.paytm.com, phonepe.com, bhimupi.org.in, npci.org.in, razorpay.com, *.razorpay.com, cred.club, wise.com, revolut.com, venmo.com, cash.app, zerodha.com/kite (kite.zerodha.com), groww.in, robinhood.com, coinbase.com, binance.com, any path containing /checkout, /payment, /billing, /wallet.
+- Health portals: mychart.*, *.mychart.com, *patientportal*, *.practo.com/consult, healthvault.*, myhealth.*, patient.*, apollo247.com, 1mg.com/my-account, nhs.uk/nhs-app, *.healthcare.gov.
+- Government & ID: uidai.gov.in, myaadhaar.uidai.gov.in, incometax.gov.in, eportal.incometax.gov.in, digilocker.gov.in, passportindia.gov.in, epfindia.gov.in, irs.gov, ssa.gov, login.gov, id.me, gov.uk/sign-in, *.gc.ca/signin, my.gov.au.
+- Incognito: never (manifest `"incognito": "not_allowed"` + runtime checks) — documented in the list header, not a pattern.
+Popup gets a one-click **Don't remember this site** button: adds the current tab's hostname to the
+blocklist, deletes any queued entries for that host, and shows "Forgotten locally. Use the forget
+tool to remove it from your ghost too." (plus an Undo for 5 s).
+
+### 8.3 Extraction pipeline (extension/lib/pipeline.js + extension/lib/extractors/*.js)
+All classic/UMD files registered on `globalThis.GhostExtractors` so content.js and node tests share
+them. Pipeline: `runPipeline(doc, url, {now}) → {kind, title, markdown, excerpt, lang, meta}`:
+1. **Guard**: protocol http/https, not blocklisted, not incognito, document not a login form page
+   (has `input[type=password]` visible and < 300 words → skip).
+2. **Pick extractor**: first site extractor whose `match(url)` is true; else `generic`.
+3. **Extract** with the site extractor; if it throws or returns < 120 chars, fall back to `generic`.
+4. **Post-process** (shared): strip boilerplate lines (cookie/consent/"sign in"/"subscribe"/"share
+   this"/"advertisement"/"skip to content"/"accept all"), collapse whitespace, **dedupe** repeated
+   lines/paragraphs (exact and whitespace-normalised, keep first), remove empty links/data: images,
+   enforce caps (whole doc 200 000 chars; comments/answers sections capped per extractor), prepend a
+   metadata header:
+   `# {title}\n\n> {kind} · {domain} · {author/channel if any} · {published if any}\n\n`.
+5. **Return** with `kind` (e.g. `youtube-video`, `reddit-thread`, `x-post`, `github-repo`,
+   `github-issue`, `github-pr`, `wikipedia-article`, `stackoverflow-question`, `product`,
+   `news-article`, `docs-page`, `article`) and `meta` (small JSON: author, channel, published,
+   price, currency, rating, score, tags — only fields found).
+Time on page stays in content.js (visible+focused), independent of the extractor.
+
+Extractors (each ≤ ~120 lines, DOM-first with JSON-LD / embedded JSON fallbacks, never network
+except where noted):
+- `youtube` (youtube.com/watch, youtu.be, m.youtube.com/watch, youtube.com/shorts): title, channel,
+  publish date, description from `ytInitialPlayerResponse.videoDetails` (parse from inline
+  `<script>` text with a brace-matching JSON slice) or DOM (`#title h1`, `ytd-channel-name a`,
+  `#description-inline-expander`); **transcript when available**: captionTracks[].baseUrl (prefer
+  manual English, else ASR English, else first) fetched same-origin with `&fmt=json3`, flattened to
+  paragraphs every ~30 s with `[mm:ss]` stamps, capped 60 000 chars; failure → description only.
+- `reddit` (reddit.com/r/*/comments/*, old.reddit.com): fetch same-origin `{url-without-query}.json?limit=40&sort=top`
+  → post title, author, subreddit, score, selftext (or link URL) + top 15 comments (author, score,
+  body, depth ≤ 2, skip deleted/AutoModerator); DOM fallback (`shreddit-post`, `shreddit-comment`).
+- `x` (x.com/*/status/*, twitter.com/*/status/*): `article[data-testid="tweet"]` → author name +
+  handle, `[data-testid="tweetText"]`, time datetime; first article = main post, next ≤ 10 = thread
+  /replies; images as alt text.
+- `github` (github.com): repo root → description, topics, stars (from `#repo-stars-counter-star` or
+  aria), README `article.markdown-body`; issues/PRs (`/issues/N`, `/pull/N`) → title, state, author,
+  body + comments (`.comment-body`, `[data-testid="markdown-body"]`, `.markdown-body`), cap 20
+  comments; other GitHub pages → generic.
+- `wikipedia` (*.wikipedia.org/wiki/*): `#mw-content-text .mw-parser-output` minus `.reference`,
+  `sup.reference`, `.mw-editsection`, `.navbox`, `.metadata`, `#toc`, `.hatnote`, `.reflist`,
+  "References/External links/See also" sections onward; infobox → key: value list at top.
+- `stackexchange` (stackoverflow.com/questions/*, *.stackexchange.com/questions/*, superuser.com,
+  serverfault.com, askubuntu.com): question title, tags, score, body (`.question .s-prose`), accepted
+  answer (`.answer.accepted-answer`) else top-voted, plus next 2 answers by score, with scores.
+- `product` (amazon.*/dp/*, amazon.*/gp/product/*, flipkart.com/*/p/*, and any page with JSON-LD
+  `@type: Product`): name (`#productTitle` / JSON-LD / `h1`), price + currency (`.a-price .a-offscreen`,
+  `#corePriceDisplay_desktop_feature_div`, JSON-LD offers, Flipkart price node with ₹), rating,
+  brand, key specs (`#feature-bullets li`, `#productDetails_techSpec_section_1 tr`,
+  `#productOverview_feature_div tr`, Flipkart spec tables `table tr`), capped 40 spec rows; no reviews.
+- `news` (pages whose JSON-LD `@type` is NewsArticle/Article/BlogPosting/ReportageNewsArticle, or
+  `og:type=article`): headline, author(s), datePublished, section; body via Readability.
+- `docs` (developer.mozilla.org, docs.*, *.readthedocs.io, learn.microsoft.com, developers.cloudflare.com,
+  docs.github.com, nodejs.org/api, python.org/3/library, kiro.dev/docs, any page with
+  `<main>` + a sidebar nav and many `<pre>`): main/article/[role=main] content, keep code blocks with
+  language, breadcrumbs → meta.section, drop sidebars/TOC/"Was this helpful".
+- `generic`: the Readability + Turndown path from §3.
+Tests: unit tests with small synthetic HTML fixtures per extractor (`extension/test/fixtures/*.html`)
+and a live check `node tests/extractors/live.mjs` that opens one real page per extractor in headless
+Chromium, injects the lib files, runs the pipeline and writes `tests/extractors/out/{name}.md` +
+a summary table (chars, kind, key fields found, pass/fail). Sites that block headless/anonymous
+access (often X, sometimes Reddit/YouTube/Amazon) are reported as "blocked", not faked.
+
+### 8.4 Worker changes
+- `pages` gets `kind TEXT` and `meta TEXT` (JSON) columns; ingest accepts `kind`/`meta`; MCP results
+  include `kind`; `list_pages`/`search_memory` accept optional `kind` filter.
+- `GET /` HTML landing page: "Your ghost is alive" + `<meta name="ghost-from-the-past" content="worker">`
+  + **Connect to extension** button (postMessage, see 8.1) + MCP URL (`{origin}/mcp`) and how to add it;
+  never shows the secret or any memory.

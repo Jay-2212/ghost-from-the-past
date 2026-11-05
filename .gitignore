@@ -7,4 +7,3 @@ shots/*.tmp
 
 # Keep .kiro/ and never ignore it
 !.kiro/
-!docs/kiro-logs/*.log
