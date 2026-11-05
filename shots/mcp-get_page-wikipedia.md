@@ -1,6 +1,6 @@
 # Ghost
 https://en.wikipedia.org/wiki/Ghost
-Kind: wikipedia-article · first read 2026-11-05T22:21:11.152Z · last 2026-11-05T22:21:15.609Z · time spent 4s · visits 1
+Kind: wikipedia-article · first read 2026-11-05T22:33:48.741Z · last 2026-11-05T22:33:53.079Z · time spent 4s · visits 1
 
 ---
 

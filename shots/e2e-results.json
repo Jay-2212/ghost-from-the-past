@@ -1,6 +1,6 @@
 {
   "base": "http://127.0.0.1:8787",
-  "at": "2026-11-05T22:21:42.402Z",
+  "at": "2026-11-05T22:34:20.907Z",
   "results": [
     {
       "name": "extension service worker loads",
@@ -75,7 +75,7 @@
     {
       "name": "search_memory with domain filter finds MDN",
       "ok": true,
-      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (4s, docs-page)"
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (5s, docs-page)"
     },
     {
       "name": "list_pages for today",
