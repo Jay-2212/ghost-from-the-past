@@ -55,12 +55,20 @@ function ensureAlarm() {
 }
 
 // ---------- install / startup ----------
+// The secret is created in exactly one place (under the lock) so onboarding and onInstalled can never race.
+function ensureSecret() {
+  return locked(async () => {
+    const { secret } = await chrome.storage.local.get('secret');
+    if (secret) return secret;
+    const fresh = generateSecret();
+    await chrome.storage.local.set({ secret: fresh });
+    return fresh;
+  });
+}
+
 chrome.runtime.onInstalled.addListener(async details => {
-  const s = await getSettings();
-  const patch = {};
-  if (!s.secret) patch.secret = generateSecret();
-  if (typeof (await chrome.storage.local.get('blocklist')).blocklist !== 'string') patch.blocklist = B.defaultText();
-  if (Object.keys(patch).length) await setSettings(patch);
+  await ensureSecret();
+  if (typeof (await chrome.storage.local.get('blocklist')).blocklist !== 'string') await setSettings({ blocklist: B.defaultText() });
   ensureAlarm();
   await setBadge();
   if (details.reason === 'install') chrome.tabs.create({ url: chrome.runtime.getURL('onboarding.html') });
@@ -312,6 +320,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   switch (msg.type) {
     case 'ghost:status':
       return reply(status());
+    case 'ghost:ensure-secret':
+      return reply(ensureSecret().then(secret => ({ ok: true, secret })));
     case 'ghost:sync':
       return reply(syncNow('manual'));
     case 'ghost:pause':

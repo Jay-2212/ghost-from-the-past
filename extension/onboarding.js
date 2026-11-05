@@ -1,4 +1,4 @@
-import { getSettings, setSettings, generateSecret, DEPLOY_URL } from './lib/settings.js';
+import { getSettings, DEPLOY_URL } from './lib/settings.js';
 const $ = id => document.getElementById(id);
 const send = msg => chrome.runtime.sendMessage(msg);
 
@@ -15,11 +15,8 @@ function show(n) {
 }
 
 async function ensureSecret() {
-  const s = await getSettings();
-  if (s.secret) return s.secret;
-  const secret = generateSecret();
-  await setSettings({ secret });
-  return secret;
+  const r = await send({ type: 'ghost:ensure-secret' });
+  return r.secret;
 }
 
 async function connect(workerUrl, secret) {
