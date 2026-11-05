@@ -1,0 +1,17 @@
+body { min-height: 100vh; }
+.stage { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 32px 16px; }
+.screen { width: min(560px, 100%); padding: 40px 36px; border-radius: 32px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+.screen h1 { font-size: 30px; }
+.lead { font-size: 17px; color: #2a2825; max-width: 440px; }
+.ghost { width: 120px; height: 120px; }
+.dots { list-style: none; display: flex; gap: 10px; margin: 0; padding: 0; }
+.dots li { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); }
+.dots li[aria-current="step"], .dots li.done { background: var(--ink); }
+.secretBox { width: 100%; text-align: left; }
+.secretBox .codebox { min-height: 40px; display: flex; align-items: center; }
+details { width: 100%; text-align: left; border: var(--line); border-radius: 18px; padding: 12px 14px; background: var(--paper); }
+summary { cursor: pointer; font-weight: 700; }
+.manualBody { margin-top: 12px; }
+.offer { width: 100%; text-align: left; background: var(--paper); }
+.offer .mono { word-break: break-all; font-size: 13px; }
+.center { justify-content: center; }

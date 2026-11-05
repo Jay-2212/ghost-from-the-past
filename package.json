@@ -1,14 +1,18 @@
 {
   "name": "ghost-from-the-past",
   "version": "1.0.0",
-  "description": "A personal, privacy-first browser memory for knowledge workers.",
   "private": true,
   "license": "MIT",
+  "description": "A ghost from your past that remembers every page you've read. Root package only holds e2e/test tooling; extension/ and worker/ are independent.",
+  "type": "module",
   "scripts": {
-    "test:e2e": "node tests/e2e/run.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "test": "cd worker && npx vitest run && cd ../extension && npm test",
+    "test:e2e": "node tests/e2e/run.mjs",
+    "test:extractors": "node tests/extractors/live.mjs"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.32.0",
-    "playwright-core": "^1.48.0"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "playwright-core": "1.56.0"
   }
 }

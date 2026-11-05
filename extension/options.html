@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Ghost from the Past · Settings</title><link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="options.css"></head>
+<body>
+  <main class="wrap stack">
+    <header class="row">
+      <img class="mark big" src="icons/ghost.svg" alt="">
+      <div class="grow"><h1>Ghost from the Past</h1><p class="muted">Settings · your memories stay in your own Cloudflare account</p></div>
+      <span class="pill" id="statusPill"><span class="dot"></span><span id="statusText">…</span></span>
+    </header>
+
+    <section class="card stack" aria-labelledby="h-conn">
+      <h2 id="h-conn">Your Worker</h2>
+      <div><label for="workerUrl">Worker URL</label><input id="workerUrl" type="url" placeholder="https://ghost-from-the-past.your-name.workers.dev" autocomplete="off" spellcheck="false"></div>
+      <div>
+        <label for="secret">Secret</label>
+        <div class="row"><input id="secret" type="password" autocomplete="off" spellcheck="false" class="grow"><button class="btn" id="showSecret" aria-pressed="false">Show</button><button class="btn" id="copySecret">Copy</button></div>
+        <p class="hint">The same value as <code>GHOST_SECRET</code> on your Worker. It never leaves this browser except to talk to your Worker.</p>
+      </div>
+      <div class="row"><button class="btn solid" id="saveConn">Test &amp; save</button><button class="btn" id="testConn">Test connection</button><span class="toast grow" id="connToast" role="status" aria-live="polite"></span></div>
+    </section>
+
+    <section class="card stack" aria-labelledby="h-mcp">
+      <h2 id="h-mcp">Use it from your AI</h2>
+      <p class="muted">Add this remote MCP server to Claude, Kiro, Cursor or any MCP client. It sends your secret as a bearer token.</p>
+      <div class="row"><div class="codebox grow" id="mcpUrl">—</div><button class="btn" id="copyMcp">Copy MCP URL</button></div>
+      <div class="codebox" id="mcpSnippet">—</div>
+      <div class="row"><button class="btn" id="revealSnippet" aria-pressed="false">Reveal secret</button><button class="btn" id="copySnippet">Copy config</button><span class="toast grow" id="mcpToast" role="status" aria-live="polite"></span></div>
+    </section>
+
+    <section class="card stack" aria-labelledby="h-priv">
+      <h2 id="h-priv">Privacy</h2>
+      <label class="switch"><input type="checkbox" id="paused"> Pause remembering</label>
+      <label class="switch"><input type="checkbox" id="redactEmails"> Hide e-mail addresses before syncing</label>
+      <div class="row"><label for="minDwell" class="grow" style="margin:0">Only remember pages I spend at least</label><input id="minDwell" type="number" min="0" max="600" step="1" style="width:90px"><span>seconds on</span></div>
+      <p class="hint">Card numbers, API keys, private keys and ID numbers are always hidden. Incognito windows are never remembered.</p>
+      <div>
+        <label for="blocklist">Never remember these sites</label>
+        <textarea id="blocklist" rows="14" spellcheck="false"></textarea>
+        <p class="hint">One pattern per line: <code>example.com</code> (and its subdomains), <code>*.bank.com</code>, <code>site.com/private*</code>, <code>chrome://*</code>. Lines starting with # are notes. <code>@private-network</code>, <code>@auth-paths</code> and <code>@payment-paths</code> are built-in rules.</p>
+      </div>
+      <div class="row"><button class="btn solid" id="savePrivacy">Save privacy settings</button><button class="btn" id="resetBlocklist">Reset to defaults</button><span class="toast grow" id="privToast" role="status" aria-live="polite"></span></div>
+    </section>
+
+    <section class="card stack" aria-labelledby="h-recent">
+      <div class="row"><h2 id="h-recent" class="grow">Recently remembered</h2><span class="small muted" id="syncLine"></span></div>
+      <ul id="recent" class="recent"></ul>
+      <div class="row"><button class="btn" id="syncNow">Sync now</button><button class="btn" id="clearQueue">Forget local queue</button><button class="btn" id="rerunSetup">Run setup again</button><span class="toast grow" id="recentToast" role="status" aria-live="polite"></span></div>
+    </section>
+    <p class="small muted center">Ghost from the Past · MIT · <a href="https://github.com/Jay-2212/ghost-from-the-past" target="_blank" rel="noopener">source</a></p>
+  </main>
+  <script src="options.js" type="module"></script>
+</body>
+</html>

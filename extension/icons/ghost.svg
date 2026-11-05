@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Ghost from the Past</title>
+  <!-- white squircle tile with a black outline -->
+  <path d="M64 4C17 4 4 17 4 64s13 60 60 60 60-13 60-60S111 4 64 4z" fill="#FFFFFF" stroke="#111111" stroke-width="6"/>
+  <!-- bedsheet ghost: dome head, gently flared sheet, scalloped hem -->
+  <path d="M64 21C44 21 32 37 32 57v22c0 7-2 13-5 19 6 3 11 2 15-2 4 5 10 6 15 1 4 5 10 5 14 0 5 5 11 4 15-1 4 4 9 5 15 2-3-6-5-12-5-19V57c0-20-12-36-32-36z" fill="#111111"/>
+  <!-- eye holes and a little singing mouth -->
+  <ellipse cx="53" cy="56" rx="6" ry="8.5" fill="#FFFFFF"/>
+  <ellipse cx="75" cy="56" rx="6" ry="8.5" fill="#FFFFFF"/>
+  <ellipse cx="64" cy="74" rx="4" ry="5.5" fill="#FFFFFF"/>
+</svg>

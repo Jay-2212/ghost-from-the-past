@@ -1,0 +1,7 @@
+body { width: 330px; }
+#app { padding: 16px; }
+h1 { font-size: 16px; }
+h2 { font-size: 15px; }
+#statusText { font-size: 13px; }
+#lastSync.error { font-weight: 600; }
+#toastUndo { margin-left: 6px; }

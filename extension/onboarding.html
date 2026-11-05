@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Meet your ghost · Ghost from the Past</title><link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="onboarding.css"></head>
+<body>
+  <main class="stage">
+    <ol class="dots" aria-label="Setup progress"><li data-step="1" aria-current="step"></li><li data-step="2"></li><li data-step="3"></li></ol>
+
+    <section class="screen card" id="s1" aria-labelledby="t1">
+      <img class="ghost float" src="icons/ghost.svg" alt="">
+      <h1 id="t1">Hello and welcome.</h1>
+      <p class="lead">Hope you're ready to meet your ghost from the past.</p>
+      <button class="btn solid big" id="iam">I am!</button>
+    </section>
+
+    <section class="screen card" id="s2" aria-labelledby="t2" hidden>
+      <h1 id="t2">A few things before we begin</h1>
+      <p class="lead">Your memories live in <b>your own Cloudflare account</b>, so nobody else ever holds them. Click Deploy, and Cloudflare builds your private ghost in about a minute. Then come back here.</p>
+      <div class="secretBox stack">
+        <label for="secretOut">Your secret key</label>
+        <div class="row"><code class="codebox grow" id="secretOut">…</code><button class="btn" id="copySecret">Copy</button></div>
+        <p class="hint">On the Deploy page, paste it into the <b>GHOST_SECRET</b> box. We copy it for you when you press Deploy.</p>
+      </div>
+      <button class="btn solid big" id="deploy">Deploy to Cloudflare</button>
+      <p class="toast" id="deployToast" role="status" aria-live="polite"></p>
+
+      <div class="card offer stack" id="offer" hidden role="alertdialog" aria-labelledby="offerTitle">
+        <h2 id="offerTitle">Connect to this ghost?</h2>
+        <p class="mono" id="offerUrl"></p>
+        <p class="hint">Only say yes if this is the Worker you just deployed.</p>
+        <div class="row"><button class="btn solid" id="offerYes">Yes, connect</button><button class="btn" id="offerNo">No</button></div>
+      </div>
+
+      <details id="manual">
+        <summary>Deploy done? Connect by hand</summary>
+        <div class="stack manualBody">
+          <p class="hint">Open your new Worker's address and press <b>Connect to extension</b>, or paste the address here.</p>
+          <div><label for="workerUrl">Worker address</label><input id="workerUrl" type="url" placeholder="https://ghost-from-the-past.your-name.workers.dev" spellcheck="false"></div>
+          <div><label for="secretIn">Secret</label><input id="secretIn" type="password" spellcheck="false"><p class="hint">Change it only if you typed a different GHOST_SECRET on the Deploy page.</p></div>
+          <button class="btn solid" id="connectBtn">Test connection</button>
+        </div>
+      </details>
+      <p class="toast" id="connToast" role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="screen card" id="s3" aria-labelledby="t3" hidden>
+      <img class="ghost float" src="icons/ghost.svg" alt="">
+      <h1 id="t3">All done!</h1>
+      <p class="lead">I'll be watching you.</p>
+      <p class="muted small" id="doneInfo"></p>
+      <div class="row center"><button class="btn" id="openSettings">Open settings</button><button class="btn solid" id="closeTab">Start reading</button></div>
+    </section>
+  </main>
+  <script src="onboarding.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{
+  "manifest_version": 3,
+  "name": "Ghost from the Past",
+  "short_name": "Ghost",
+  "version": "1.0.0",
+  "description": "A ghost from your past that remembers every page you read, in your own Cloudflare account, searchable by any AI over MCP.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Ghost from the Past",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module",
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false,
+      "js": [
+        "vendor/Readability.js",
+        "vendor/turndown.js",
+        "lib/blocklist.js",
+        "lib/pipeline.js",
+        "lib/extractors/youtube.js",
+        "lib/extractors/reddit.js",
+        "lib/extractors/x.js",
+        "lib/extractors/github.js",
+        "lib/extractors/wikipedia.js",
+        "lib/extractors/stackexchange.js",
+        "lib/extractors/product.js",
+        "lib/extractors/docs.js",
+        "lib/extractors/news.js",
+        "content.js"
+      ]
+    }
+  ],
+  "permissions": [
+    "storage",
+    "alarms",
+    "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "incognito": "not_allowed",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ghost-from-the-past@jay-2212",
+      "strict_min_version": "121.0"
+    }
+  }
+}

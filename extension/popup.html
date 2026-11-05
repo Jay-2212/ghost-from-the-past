@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Ghost from the Past</title><link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="popup.css"></head>
+<body>
+  <main class="stack" id="app">
+    <header class="row">
+      <img class="mark" src="icons/ghost.svg" alt="">
+      <div class="grow"><h1>Ghost from the Past</h1><p class="muted small">remembers every page you read</p></div>
+    </header>
+
+    <section id="connect" class="card stack" hidden>
+      <h2>Connect your Worker</h2>
+      <p class="muted">Your memories live in your own Cloudflare account. It takes about two minutes.</p>
+      <button class="btn solid block" id="startSetup">Set up my ghost</button>
+    </section>
+
+    <section id="main" class="stack" hidden>
+      <div class="row">
+        <span class="pill" id="statusPill" aria-live="polite"><span class="dot"></span><span id="statusText">Haunting</span></span>
+        <span class="grow"></span>
+        <button class="btn" id="pauseBtn" aria-pressed="false">Pause</button>
+      </div>
+      <div class="row">
+        <div class="stat grow"><b id="today">0</b><span class="small muted">remembered today</span></div>
+        <div class="stat grow"><b id="queued">0</b><span class="small muted">waiting to sync</span></div>
+      </div>
+      <p class="small" id="lastSync" aria-live="polite">Last sync: never</p>
+      <div class="row">
+        <button class="btn grow" id="syncBtn">Sync now</button>
+        <button class="btn grow" id="settingsBtn">Settings</button>
+      </div>
+      <hr class="divider">
+      <div class="stack">
+        <p class="small muted" id="siteLine">This site</p>
+        <button class="btn block" id="forgetSite">Don't remember this site</button>
+        <p class="toast" id="siteToast" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
