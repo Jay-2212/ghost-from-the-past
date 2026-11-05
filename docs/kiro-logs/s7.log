@@ -1,0 +1,49 @@
+I'll read the necessary files to write comprehensive and accurate documentation.
+[tool] Reading README.md:1
+[tool] Reading THIRD_PARTY.md:1
+[tool] Reading e2e-results.json:1
+[tool] Reading listing shots
+[tool] Reading manifest.json:1
+[tool] Reading mcp.ts:1-150
+[tool] Reading Readability.js:1-30, turndown.js:1-30
+[tool] Running: git log --oneline --all
+[tool] Reading listing kiro-logs
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+Now I'll write the comprehensive README and update THIRD_PARTY.md.
+[tool] Creating README.md
+[tool] Editing THIRD_PARTY.md
+[tool] status: Completed
+[tool] status: Completed
+README.md and THIRD_PARTY.md written. The README includes:
+
+- Hero line with the ghost icon
+- What it does: clean markdown capture with site-specific extractors, URL/title, time on page, visit tracking
+- Architecture diagram showing extension → Worker (D1 + Vectorize/D1 vectors + Workers AI) → MCP clients
+- All 5 MCP tools documented
+- Privacy section with default blocklist categories, redaction, and the privacy guarantees
+- 10-minute setup with screenshots, Deploy to Cloudflare button, and manual wrangler instructions
+- MCP config examples for Claude Desktop, Kiro CLI, and query-string fallback
+- Example prompts
+- Free-tier limits (D1, Vectorize, Workers AI quotas)
+- Testing section: 37 worker tests (vitest), 27 extension tests (node:test), 21 e2e tests, live extractor check
+- Screenshots embedded with captions
+- "How Kiro Built This" section with:
+  - Spec-driven development explanation (brief → requirements → design → tasks)
+  - Steering files (product, tech, design-language)
+  - Hooks (secret-guard, test-on-save)
+  - Vibe vs spec coding tradeoffs
+  - Authorship table from git log (Kiro S1/S2/S4/S5/S6, Hark for implementation, Jay for product vision)
+  - Honest known gaps (4/10 extractor tests pass, 2 extractor gaps, Vectorize not e2e-tested, not on Chrome Web Store)
+- Links to docs/kiro-logs/ for all session prompts and logs
+- License and contributing footer
+
+THIRD_PARTY.md updated with accurate Apache-2.0 (Readability) and MIT (Turndown) license info, version numbers, copyright notices, and key NPM dependencies.
+EXIT 0

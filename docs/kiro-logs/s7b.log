@@ -1,0 +1,107 @@
+I'll fact-check the README against the actual code and documentation, then make only the necessary corrections.
+[tool] Reading blocklist.js:1
+[tool] Reading redact.js:1
+[tool] Reading secret-guard.json:1, test-on-save.json:1
+[tool] Reading listing specs
+[tool] Reading BRIEF.md:1-50, wrangler.jsonc:1-30
+[tool] Reading package.json:1
+[tool] Reading package.json:1
+[tool] Reading env.ts:1
+[tool] Reading e2e-results-deployed.json:1-20
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: grep -c "^## " docs/BRIEF.md && grep -c "^- \[.\]" .kiro/specs/ghost-from-the-past/tasks.md
+[tool] Finding worker/test/*.test.ts
+[tool] Running: cd extension && npm test 2>&1 | tail -5
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+Now I'll make the precise corrections to the README:
+[tool] status: Failed
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] Editing README.md
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] status: Completed
+[tool] Reading README.md:71-90
+[tool] status: Completed
+[tool] Searching for '## Free Tier' in README.md
+[tool] status: Completed
+[tool] Reading README.md:244-263
+[tool] status: Completed
+The free tier section wasn't updated. Let me fix it properly:
+[tool] Editing README.md
+[tool] status: Completed
+Now let me verify all changes are correct:
+[tool] Running: grep -A 2 "Don't remember this site" README.md | head -3 && echo "---" && grep -A 1 "Redaction by default" README.md | head -2 && echo "---" && grep "wrangler.jsonc" README.md | head -1 &&...
+[tool] status: Completed
+[tool] Running: grep "specs/ghost-from-the-past" README.md | head -1 && echo "---" && grep -A 1 "secret-guard.*:" README.md | head -2 && echo "---" && grep "Hark is an AI agent" README.md
+[tool] status: Completed
+[tool] Searching for 'combining autonomous AI coding' in README.md
+[tool] status: Completed
+[tool] Running: grep -A 5 '"command": "npx"' README.md | head -10 && echo "---" && grep "auth.test.ts" README.md && echo "---" && grep "21 tests locally" README.md
+[tool] status: Completed
+[tool] Running: grep "Cloudflare API token used for testing" README.md && echo "---" && grep "most application code was written by Hark" README.md && echo "---" && grep "Kiro S5, S6, S7" README.md
+[tool] status: Completed
+[tool] Searching for 'Most application code was written by Hark' in README.md
+[tool] status: Completed
+[tool] Searching for 'Vibe coding.*Kiro S5' in README.md
+[tool] status: Completed
+Perfect! All corrections are in place. Let me create a summary of the edits:
+
+## Summary of Edits Made
+
+All fact-check fixes have been applied to README.md:
+
+1. **"Don't remember this site"** — Fixed to describe it as a button in the toolbar popup (not right-click menu), showing "Won't remember \<site\>" with Undo for 5 seconds.
+
+2. **Default blocklist categories** — Updated to match the exact section headings from `extension/lib/blocklist.js`: browser pages and private network; sign-in/accounts/one-time codes (including auth paths); email and private messages; password managers; banking/UPI/payments/investing/crypto (including payment paths); health portals; government/tax/ID. Removed invented categories. Added note that the list is editable in Options with "Reset to defaults".
+
+3. **Redaction** — Updated to match `extension/lib/redact.js` exactly: card numbers, API keys/tokens/private keys, SSN-like and Aadhaar-like IDs. Email addresses hidden by default and switchable in Options. Removed phone numbers.
+
+4. **Spec paths** — Fixed to `.kiro/specs/ghost-from-the-past/{requirements,design,tasks}.md`; brief is `docs/BRIEF.md` with 8 sections (verified with grep); 14 tasks (verified with grep).
+
+5. **Hooks** — Described as Kiro agent hooks (not git hooks): `secret-guard` is PreToolUse for shell/write tool calls running `node .kiro/hooks/secret-guard.mjs`; `test-on-save` is PostFileSave running worker vitest on `.ts` files and extension node:test on `.js` files.
+
+6. **Vibe vs spec coding** — Removed "rewritten twice" claim. S1/S2/S4 were spec work; S5/S6/S7 were task-scoped prompts against existing specs (fixes, review, tests, docs).
+
+7. **Contribution statement** — Removed the ~70%/~30% estimates and "heavy lifting" paragraph. Replaced with: "Most application code was written by Hark (an AI agent) while Kiro credits were exhausted; Kiro wrote the steering, specs, hooks and scaffold, and from S5 on reviewed and changed the code." Also changed intro to say Hark is an AI agent (not "pair-programming"/"human review").
+
+8. **Vectorize gap** — Fixed to say the test Worker uses `VECTOR_MODE=d1` because the Cloudflare API token has no Vectorize permission (not "account doesn't have Vectorize enabled"). Removed "automatically falls back" claim; stated exactly: D1 vectors when `VECTOR_MODE=d1` or no `VECTORS` binding.
+
+9. **Setup** — Changed `wrangler.toml` to `wrangler.jsonc`; fixed migrations command to `npx wrangler d1 migrations apply DB --remote` (matches worker/package.json).
+
+10. **MCP configs** — Fixed Claude Desktop to use `command`/`args`/`env` form with `npx mcp-remote`; Claude Code to `claude mcp add --transport http ghost <url>/mcp --header "Authorization: Bearer <secret>"`; Kiro CLI to `~/.kiro/settings/mcp.json` (or `.kiro/settings/mcp.json` in workspace) with url + headers.
+
+11. **Tests section** — Worker tests listed as auth, chunk, embed, search, util (no MCP/env); extension tests run with `cd extension && npm test`, 27 tests, jsdom confirmed in package.json; e2e has 21 tests locally, 19 against deployed Worker. Options caption lists real controls.
+
+12. **Free tier section** — Made qualitative ("fits the free tier for personal use") with link to Cloudflare pricing docs; removed specific numbers.
+EXIT 0
