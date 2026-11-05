@@ -12,6 +12,7 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
 h1, h2, h3 { margin: 0; letter-spacing: -0.02em; line-height: 1.15; }
 p { margin: 0; }

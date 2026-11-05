@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- simplified for 16px: thicker outline, bigger ghost, eyes only -->
+  <path d="M64 6C18 6 6 18 6 64s12 58 58 58 58-12 58-58S110 6 64 6z" fill="#FFFFFF" stroke="#111111" stroke-width="12"/>
+  <path d="M64 22C42 22 30 39 30 60v40c7 4 13 2 17-2 5 5 12 5 17 0 5 5 12 5 17 0 4 4 10 6 17 2V60c0-21-12-38-34-38z" fill="#111111"/>
+  <rect x="45" y="50" width="13" height="18" rx="6" fill="#FFFFFF"/>
+  <rect x="70" y="50" width="13" height="18" rx="6" fill="#FFFFFF"/>
+</svg>
