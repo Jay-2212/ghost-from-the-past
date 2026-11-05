@@ -163,9 +163,15 @@ async function main() {
     await pop.waitForFunction(() => !document.getElementById('main').hidden);
     await pop.screenshot({ path: join(SHOTS, 'popup-before-sync.png') });
     await pop.click('#syncBtn');
-    await pop.waitForFunction(() => /Synced|Last sync/.test(document.getElementById('lastSync').textContent) && !document.getElementById('syncBtn').disabled, null, { timeout: 60000 });
+    // Wait for the button to re-enable, then check for successful sync text
+    await pop.waitForFunction(() => {
+      const btn = document.getElementById('syncBtn');
+      const txt = document.getElementById('lastSync').textContent;
+      // Match "Last sync: (just now|N min ago|N h ago|N d ago) · [1-9]N* page(s)" or "Sync problem"
+      return (!btn.disabled && (/Last sync: (just now|\d+ (min|h|d) ago) · [1-9]\d* page\(s\)/.test(txt) || /Sync problem/.test(txt)));
+    }, null, { timeout: 30000 });
     const syncText = await pop.textContent('#lastSync');
-    check('popup "Sync now" sends the queue', /Synced [1-9]/.test(syncText), syncText);
+    check('popup "Sync now" sends the queue', /Last sync: (just now|\d+ (min|h|d) ago) · [1-9]\d* page\(s\)/.test(syncText), syncText);
     await pop.reload();
     await pop.waitForFunction(() => !document.getElementById('main').hidden);
     await pop.screenshot({ path: join(SHOTS, 'popup.png') });

@@ -1,6 +1,6 @@
 {
   "base": "https://ghost-from-the-past-test.jb-brain.workers.dev",
-  "at": "2026-11-05T07:37:43.078Z",
+  "at": "2026-11-05T22:08:07.855Z",
   "results": [
     {
       "name": "extension service worker loads",
@@ -25,12 +25,12 @@
     {
       "name": "connection test passes -> \"All done! I'll be watching you.\"",
       "ok": true,
-      "detail": "Connected to https://ghost-from-the-past-test.jb-brain.workers.dev · 0 page(s) remembered so far."
+      "detail": "Connected to https://ghost-from-the-past-test.jb-brain.workers.dev · 3 page(s) remembered so far."
     },
     {
       "name": "options: test connection",
       "ok": true,
-      "detail": "Connected · 0 page(s) remembered"
+      "detail": "Connected · 3 page(s) remembered"
     },
     {
       "name": "pages captured into the local queue",
@@ -44,8 +44,8 @@
     },
     {
       "name": "popup \"Sync now\" sends the queue",
-      "ok": false,
-      "detail": "Last sync: never"
+      "ok": true,
+      "detail": "Last sync: just now · 4 page(s)"
     },
     {
       "name": "records arrived in D1",
@@ -65,7 +65,7 @@
     {
       "name": "search_memory with domain filter finds MDN",
       "ok": true,
-      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (4s, docs-page)"
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (9s, docs-page)"
     },
     {
       "name": "list_pages for today",

@@ -35,10 +35,9 @@ $('pauseBtn').onclick = async () => { st = await send({ type: 'ghost:pause', pau
 $('syncBtn').onclick = async () => {
   const b = $('syncBtn');
   b.disabled = true; b.textContent = 'Syncing…';
-  const r = await send({ type: 'ghost:sync' });
+  await send({ type: 'ghost:sync' });
   b.disabled = false; b.textContent = 'Sync now';
   await refresh();
-  if (r && r.ok) $('lastSync').textContent = `Synced ${r.sent} page(s) just now`;
 };
 $('forgetSite').onclick = async () => {
   const r = await send({ type: 'ghost:forget-site', url: tab.url });
