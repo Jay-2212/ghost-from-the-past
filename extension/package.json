@@ -1,0 +1,16 @@
+{
+  "name": "ghost-from-the-past-extension",
+  "version": "1.0.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Ghost from the Past browser extension (MV3). No build step; vendor/ holds copies of Readability and Turndown.",
+  "scripts": {
+    "test": "node --test test/",
+    "vendor": "node ../scripts/vendor.mjs"
+  },
+  "devDependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "jsdom": "^26.1.0",
+    "turndown": "^7.2.0"
+  }
+}

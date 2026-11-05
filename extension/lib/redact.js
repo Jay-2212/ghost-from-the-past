@@ -1,0 +1,90 @@
+/* Ghost from the Past — redaction of obvious secrets before anything leaves the browser. Pure, UMD (globalThis.GhostRedact). */
+(function (root, factory) {
+  var m = factory();
+  if (typeof module === 'object' && module.exports) module.exports = m;
+  root.GhostRedact = m;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  function luhn(digits) {
+    var sum = 0, dbl = false;
+    for (var i = digits.length - 1; i >= 0; i--) {
+      var d = digits.charCodeAt(i) - 48;
+      if (dbl) {
+        d *= 2;
+        if (d > 9) d -= 9;
+      }
+      sum += d;
+      dbl = !dbl;
+    }
+    return sum % 10 === 0;
+  }
+
+  // 13–19 digits, optionally grouped by single spaces or dashes.
+  var CARD_RE = /(^|[^\d])(\d(?:[ -]?\d){12,18})(?!\d)/g;
+
+  function redactCards(text) {
+    return text.replace(CARD_RE, function (all, pre, num) {
+      var digits = num.replace(/[ -]/g, '');
+      if (digits.length < 13 || digits.length > 19) return all;
+      if (/^(\d)\1+$/.test(digits)) return all; // 0000… placeholders
+      return luhn(digits) ? pre + '[redacted-card]' : all;
+    });
+  }
+
+  var SECRET_RES = [
+    /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+    /\bsk-(?:proj-|ant-|live_|test_)?[A-Za-z0-9_-]{20,}\b/g,
+    /\b(?:sk|rk|pk)_(?:live|test)_[A-Za-z0-9]{16,}\b/g,
+    /\bgh[pousr]_[A-Za-z0-9]{30,}\b/g,
+    /\bgithub_pat_[A-Za-z0-9_]{40,}\b/g,
+    /\bglpat-[A-Za-z0-9_-]{20,}\b/g,
+    /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/g,
+    /\bxox[abprs]-[A-Za-z0-9-]{10,}\b/g,
+    /\bAIza[0-9A-Za-z_-]{35}\b/g,
+    /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
+    /\b(?:api[_-]?key|secret|token|password|passwd|bearer)\s*[:=]\s*["']?[A-Za-z0-9_\-\/+=.]{16,}["']?/gi,
+  ];
+
+  function redactSecrets(text) {
+    for (var i = 0; i < SECRET_RES.length; i++) text = text.replace(SECRET_RES[i], '[redacted-secret]');
+    return text;
+  }
+
+  var EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
+  function redactEmails(text) {
+    return text.replace(EMAIL_RE, '[redacted-email]');
+  }
+
+  // US SSN-like and Indian Aadhaar-like (12 digits in 4-4-4 groups) identifiers.
+  var ID_RES = [/\b\d{3}-\d{2}-\d{4}\b/g, /\b[2-9]\d{3}[ -]\d{4}[ -]\d{4}\b/g, /\b[A-Z]{5}\d{4}[A-Z]\b/g /* PAN */];
+  function redactIds(text) {
+    for (var i = 0; i < ID_RES.length; i++) text = text.replace(ID_RES[i], '[redacted-id]');
+    return text;
+  }
+
+  /** opts: {emails: boolean (default true)} */
+  function redact(text, opts) {
+    if (typeof text !== 'string' || !text) return text || '';
+    var o = opts || {};
+    var out = redactSecrets(text);
+    out = redactCards(out);
+    out = redactIds(out);
+    if (o.emails !== false) out = redactEmails(out);
+    return out;
+  }
+
+  /** Redacts the user-visible text fields of a captured page in place and returns it. */
+  function redactPage(page, opts) {
+    if (!page) return page;
+    page.markdown = redact(page.markdown, opts);
+    page.title = redact(page.title, opts);
+    page.excerpt = redact(page.excerpt, opts);
+    if (page.meta && typeof page.meta === 'object') {
+      for (var k in page.meta) if (typeof page.meta[k] === 'string') page.meta[k] = redact(page.meta[k], opts);
+    }
+    return page;
+  }
+
+  return { luhn: luhn, redact: redact, redactPage: redactPage, redactCards: redactCards, redactSecrets: redactSecrets, redactEmails: redactEmails, redactIds: redactIds };
+});
