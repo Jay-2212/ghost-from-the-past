@@ -353,7 +353,7 @@ Ghost was built as a **spec-driven development** experiment for Kiroween 2026, c
 
 ### Spec-Driven Development
 
-The project started with an 8-section **Brief** ([`docs/BRIEF.md`](docs/BRIEF.md)) written by the product owner, then expanded by Kiro into three formal specs:
+The project started with an 8-section **Brief** ([`docs/BRIEF.md`](docs/BRIEF.md)), written by Hark from the product owner's requirements, then expanded by Kiro into three formal specs:
 
 1. **Requirements** ([`.kiro/specs/ghost-from-the-past/requirements.md`](.kiro/specs/ghost-from-the-past/requirements.md)): must-have + should-have features, constraints, success criteria.
 2. **Design** ([`.kiro/specs/ghost-from-the-past/design.md`](.kiro/specs/ghost-from-the-past/design.md)): architecture, data model, API contracts, security model, error handling.
@@ -389,7 +389,7 @@ Based on `git log --oneline` and session logs in [`docs/kiro-logs/`](docs/kiro-l
 
 | Commit(s) | Author | What | Session |
 |-----------|--------|------|---------|
-| `d18715a` | **Kiro** | Steering files, specs (brief/requirements/design/tasks), hooks (secret-guard, test-on-save), worker scaffold (auth, chunk, embed, store, util + 14 util tests), wrangler config | S1, S2 |
+| `d18715a` | **Kiro** | Steering files, specs (requirements/design/tasks), hooks (secret-guard, test-on-save), worker scaffold (auth, chunk, embed, store, util + 15 util tests), wrangler config | S1, S2 |
 | `a52afca` (specs only) | **Kiro** | Spec updates: requirements/design/tasks for onboarding, privacy defaults, extraction pipeline | S4 |
 | `a52afca` (worker code), `3feb307`, `4b4bcfe`, `b42026f`, `26ddc2c`, `f81f288`, `5df70a7`, `d98918a` | **Hark** | Worker (index, ingest, search, MCP, landing, env, chunk/store changes), extension (manifest, content script, background sync, popup, options, onboarding, blocklist, redaction, extractors, unit tests), e2e tests, screenshots | (Kiro credits exhausted after S4) |
 | `3f0747d`, `950bda6`, `5761c47` | **Hark** | Worker tests pass (37), typecheck clean, extension unit tests (27) | (no Kiro session log) |
@@ -399,7 +399,7 @@ Based on `git log --oneline` and session logs in [`docs/kiro-logs/`](docs/kiro-l
 | `895d1c4` | **Hark** | S7 prompt: authorship facts for README table | (before S7) |
 | (this commit) | **Kiro** | README, THIRD_PARTY.md | S7 |
 
-**Product owner (Jay)**: idea, name, 8-section Brief requirements.
+**Product owner (Jay)**: idea, name and requirements. `docs/BRIEF.md` was written down by Hark from those requirements.
 
 Most application code was written by Hark (an AI agent) while Kiro credits were exhausted; Kiro wrote the steering, specs, hooks and scaffold, and from S5 on reviewed and changed the code.
 
