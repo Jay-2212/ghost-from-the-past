@@ -86,12 +86,12 @@ export class D1VectorStore implements VectorStore {
     if (!result.results) return [];
 
     // Brute-force cosine similarity
-    const scores = result.results.map((row: any) => ({
+    const scores: VectorQueryResult[] = result.results.map((row: any) => ({
       id: row.chunk_id,
       score: cosineSimilarity(values, JSON.parse(row.vector))
     }));
 
-    return scores.sort((a, b) => b.score - a.score).slice(0, topK);
+    return scores.sort((a: VectorQueryResult, b: VectorQueryResult) => b.score - a.score).slice(0, topK);
   }
 
   async deleteByIds(ids: string[]): Promise<void> {

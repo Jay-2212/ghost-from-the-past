@@ -66,8 +66,8 @@ describe('normaliseUrl', () => {
   });
 
   it('removes trailing slash except root', () => {
-    expect(normaliseUrl('https://example.com/page/')).not.toEndWith('/');
-    expect(normaliseUrl('https://example.com/')).toEndWith('/');
+    expect(normaliseUrl('https://example.com/page/')).toBe('https://example.com/page');
+    expect(normaliseUrl('https://example.com/')).toBe('https://example.com/');
   });
 
   it('removes credential params', () => {

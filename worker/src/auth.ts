@@ -11,14 +11,6 @@ export async function hashSecret(secret: string): Promise<ArrayBuffer> {
 }
 
 /**
- * Convert ArrayBuffer to hex string.
- */
-function bufferToHex(buf: ArrayBuffer): string {
-  const arr = new Uint8Array(buf);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
  * Timing-safe comparison of two hashes.
  * Both hashes must be the same length (they should be, post-SHA-256).
  */
