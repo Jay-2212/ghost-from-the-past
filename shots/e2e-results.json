@@ -1,0 +1,46 @@
+{
+  "base": "http://127.0.0.1:8787",
+  "at": "2026-11-05T07:17:11.864Z",
+  "results": [
+    {
+      "name": "extension service worker loads",
+      "ok": true,
+      "detail": "ncleodjmabaffkbepnjpgomkbfhblpnb"
+    },
+    {
+      "name": "onboarding opens on install",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "extension generated a 256-bit secret",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "worker starts (wrangler dev, local D1)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "landing page hands the Worker URL to the extension",
+      "ok": true,
+      "detail": "sent"
+    },
+    {
+      "name": "onboarding asks to confirm the offered Worker",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "connection test passes -> \"All done! I'll be watching you.\"",
+      "ok": false,
+      "detail": "The Worker is alive, but the secret does not match."
+    },
+    {
+      "name": "e2e crashed",
+      "ok": false,
+      "detail": "page.waitForFunction: Timeout 30000ms exceeded.\n    at main (/workspace/work/ghost-from-the-past/tests/e2e/run.mjs:135:15)"
+    }
+  ]
+}
