@@ -9,12 +9,13 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply DB --env local --local",
-    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy"
+    "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
+    "deploy": "npm run db:migrations:apply && wrangler deploy"
   },
   "cloudflare": {
     "bindings": {
       "GHOST_SECRET": {
-        "description": "Bearer token secret. Generate with: openssl rand -hex 32"
+        "description": "Paste the secret from the **Ghost from the Past** setup page in Chrome (it was copied to your clipboard when you pressed Deploy). No setup page? Generate one with `openssl rand -hex 32` and paste the same value into the extension's Options later."
       }
     }
   },

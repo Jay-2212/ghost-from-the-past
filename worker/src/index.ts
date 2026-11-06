@@ -1,8 +1,9 @@
 import { extractBearer, verifyBearer, verifyProof } from './auth';
-import { VERSION, type Env } from './env';
+import { VERSION, secretConfigured, type Env } from './env';
 import { ingestPages, MAX_PAGES_PER_BATCH } from './ingest';
 import { landingHtml } from './landing';
 import { handleMcp } from './mcp';
+import { ensureSchema } from './schema';
 import { stats } from './search';
 
 const MAX_BODY = 4 * 1024 * 1024;
@@ -32,6 +33,7 @@ function json(data: unknown, status = 200): Response {
 }
 
 async function authorised(request: Request, env: Env, allowQuery: boolean): Promise<boolean> {
+  if (!secretConfigured(env)) return false;
   const header = request.headers.get('authorization');
   if (header && (await verifyBearer(header, env.GHOST_SECRET))) return true;
   if (allowQuery) {
@@ -53,7 +55,7 @@ async function route(request: Request, env: Env): Promise<Response> {
         headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
       });
     }
-    return json({ ok: true, name: 'ghost-from-the-past', version: VERSION, configured: Boolean(env.GHOST_SECRET) });
+    return json({ ok: true, name: 'ghost-from-the-past', version: VERSION, configured: secretConfigured(env) });
   }
 
   if (!['/ingest', '/api/stats', '/api/verify', '/mcp'].includes(path)) return json({ error: 'not found' }, 404);
@@ -77,7 +79,9 @@ async function route(request: Request, env: Env): Promise<Response> {
   
   // /api/verify does not require auth (it must work before the client trusts the server)
   if (path === '/api/verify' && request.method === 'POST') {
-    if (!env.GHOST_SECRET) return json({ error: 'GHOST_SECRET is not set on this Worker. Run: npx wrangler secret put GHOST_SECRET' }, 503);
+    if (!secretConfigured(env)) {
+      return json({ error: 'GHOST_SECRET is missing or too weak on this Worker. Set it in the Cloudflare dashboard (Workers & Pages > your Worker > Settings > Variables and Secrets, type Secret) to the value from the Ghost setup page.' }, 503);
+    }
     
     const len = Number(request.headers.get('content-length') ?? '0');
     if (len > 1024) return json({ error: 'body too large' }, 413);
@@ -95,17 +99,22 @@ async function route(request: Request, env: Env): Promise<Response> {
       return json({ error: 'nonce must be a hex string, 32-128 chars' }, 400);
     }
     
-    const proof = await verifyProof(env.GHOST_SECRET, url.origin, body.nonce);
+    const proof = await verifyProof(env.GHOST_SECRET!, url.origin, body.nonce);
     return json({ ok: true, proof });
   }
   
-  if (!env.GHOST_SECRET) return json({ error: 'GHOST_SECRET is not set on this Worker. Run: npx wrangler secret put GHOST_SECRET' }, 503);
+  if (!secretConfigured(env)) {
+    return json({ error: 'GHOST_SECRET is missing or too weak on this Worker. Set it in the Cloudflare dashboard (Workers & Pages > your Worker > Settings > Variables and Secrets, type Secret) to the value from the Ghost setup page.' }, 503);
+  }
   if (!(await authorised(request, env, path === '/mcp' && env.ALLOW_QUERY_TOKEN === 'true'))) {
     return new Response(JSON.stringify({ error: 'unauthorised' }), {
       status: 401,
       headers: { 'content-type': 'application/json', 'www-authenticate': 'Bearer realm="ghost-from-the-past"' },
     });
   }
+
+  // Ensure schema exists before processing DB-touching routes
+  await ensureSchema(env.DB);
 
   if (path === '/mcp') return handleMcp(request, env);
 

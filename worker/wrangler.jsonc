@@ -13,12 +13,9 @@
     }
   ],
 
-  "vectorize": [
-    {
-      "binding": "VECTORS",
-      "index_name": "ghost-memory"
-    }
-  ],
+  // Optional: Vectorize instead of the D1 vector table (faster at large scale).
+  // npx wrangler vectorize create ghost-memory --preset @cf/baai/bge-small-en-v1.5
+  // then add: "vectorize": [{ "binding": "VECTORS", "index_name": "ghost-memory" }]
 
   "ai": {
     "binding": "AI"

@@ -16,6 +16,16 @@ export interface Env {
 
 export const VERSION = '1.0.0';
 
+const PLACEHOLDER_SECRETS = ['generate_with_openssl_rand_hex_32', 'your_secret_here', 'changeme'];
+
+export function secretConfigured(env: Env): boolean {
+  if (!env.GHOST_SECRET || typeof env.GHOST_SECRET !== 'string') return false;
+  const trimmed = env.GHOST_SECRET.trim();
+  if (trimmed.length < 16) return false;
+  const lower = trimmed.toLowerCase();
+  return !PLACEHOLDER_SECRETS.some(p => lower === p);
+}
+
 export function vectorMode(env: Env): 'vectorize' | 'd1' {
   return env.VECTOR_MODE === 'd1' || !env.VECTORS ? 'd1' : 'vectorize';
 }

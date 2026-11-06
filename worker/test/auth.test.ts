@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { extractBearer, verifyBearer, verifyProof } from '../src/auth';
+import { secretConfigured, type Env } from '../src/env';
 
 describe('verifyBearer', () => {
   it('accepts the right secret', async () => {
@@ -39,5 +40,41 @@ describe('verifyProof', () => {
     expect(proof1).not.toBe(proof2);
     expect(proof1).not.toBe(proof3);
     expect(proof1).not.toBe(proof4);
+  });
+});
+
+describe('secretConfigured', () => {
+  const mockEnv = (secret?: string): Env => ({
+    GHOST_SECRET: secret,
+  } as Env);
+
+  it('accepts strong secrets', () => {
+    expect(secretConfigured(mockEnv('a'.repeat(16)))).toBe(true);
+    expect(secretConfigured(mockEnv('0123456789abcdef0123456789abcdef'))).toBe(true);
+    expect(secretConfigured(mockEnv('  strong-secret-value  '))).toBe(true);
+  });
+
+  it('rejects missing or too short', () => {
+    expect(secretConfigured(mockEnv())).toBe(false);
+    expect(secretConfigured(mockEnv(''))).toBe(false);
+    expect(secretConfigured(mockEnv('   '))).toBe(false);
+    expect(secretConfigured(mockEnv('short'))).toBe(false);
+    expect(secretConfigured(mockEnv('a'.repeat(15)))).toBe(false);
+  });
+
+  it('rejects known placeholders case-insensitively', () => {
+    expect(secretConfigured(mockEnv('generate_with_openssl_rand_hex_32'))).toBe(false);
+    expect(secretConfigured(mockEnv('Generate_With_Openssl_Rand_Hex_32'))).toBe(false);
+    expect(secretConfigured(mockEnv('GENERATE_WITH_OPENSSL_RAND_HEX_32'))).toBe(false);
+    expect(secretConfigured(mockEnv('your_secret_here'))).toBe(false);
+    expect(secretConfigured(mockEnv('YOUR_SECRET_HERE'))).toBe(false);
+    expect(secretConfigured(mockEnv('changeme'))).toBe(false);
+    expect(secretConfigured(mockEnv('CHANGEME'))).toBe(false);
+  });
+
+  it('accepts similar but not exact placeholder strings', () => {
+    // Typos or variations should pass (user responsibility)
+    expect(secretConfigured(mockEnv('generate_with_openssl_rand_hex_33'))).toBe(true);
+    expect(secretConfigured(mockEnv('your_secret_here_123'))).toBe(true);
   });
 });
