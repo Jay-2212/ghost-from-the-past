@@ -38,7 +38,14 @@
     'web.whatsapp.com', 'web.telegram.org', 'messages.google.com', 'discord.com/channels*', 'app.slack.com', 'teams.microsoft.com',
     'www.messenger.com', 'instagram.com/direct*', 'x.com/messages*', 'twitter.com/messages*', 'linkedin.com/messaging*',
     '',
+    '# Private documents, workspaces and AI chats',
+    'docs.google.com', 'drive.google.com', 'calendar.google.com', 'contacts.google.com', 'keep.google.com', 'photos.google.com',
+    'onedrive.live.com', '*.sharepoint.com', 'office.com', 'dropbox.com/home*', 'app.box.com',
+    'notion.so', '*.slack.com', '*.atlassian.net',
+    'chatgpt.com', 'chat.openai.com', 'claude.ai', 'gemini.google.com',
+    '',
     '# Password managers',
+    'vault.*', 'roboform.com', 'enpass.io',
     '1password.com', 'bitwarden.com', 'lastpass.com', 'dashlane.com', 'keepersecurity.com', 'nordpass.com',
     'proton.me/pass*', 'passwords.google.com', 'passwords.google',
     '',
@@ -158,6 +165,23 @@
         /* ignore a broken user pattern */
       }
     }
+    
+    // Check hash routes: if hash starts with #/ or #!/ treat it as a route
+    if (u.hash && /^#!?\//.test(u.hash)) {
+      try {
+        var h = new URL(u.origin + u.hash.replace(/^#!?/, ''));
+        for (var k = 0; k < patterns.length; k++) {
+          try {
+            if (matchOne(patterns[k], h)) return patterns[k];
+          } catch (e) {
+            /* ignore a broken user pattern */
+          }
+        }
+      } catch (e) {
+        /* invalid hash route, ignore */
+      }
+    }
+    
     return null;
   }
 

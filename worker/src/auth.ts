@@ -64,3 +64,27 @@ export function extractBearer(authHeader: string | null): string | null {
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
   return match ? match[1] : null;
 }
+
+/**
+ * Generate an origin-bound proof using HMAC-SHA256.
+ * Used to verify the Worker knows the secret without sending the secret first.
+ */
+export async function verifyProof(secret: string, origin: string, nonce: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const message = `ghost-verify:${origin}:${nonce}`;
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  
+  // Convert to lowercase hex
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}

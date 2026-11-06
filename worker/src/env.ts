@@ -10,6 +10,8 @@ export interface Env {
   VECTOR_MODE?: string;
   EMBED_MODEL?: string;
   MAX_CHUNKS_PER_PAGE?: string;
+  ALLOW_QUERY_TOKEN?: string;
+  LIMITER?: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
 export const VERSION = '1.0.0';

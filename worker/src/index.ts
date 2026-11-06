@@ -1,4 +1,4 @@
-import { extractBearer, verifyBearer } from './auth';
+import { extractBearer, verifyBearer, verifyProof } from './auth';
 import { VERSION, type Env } from './env';
 import { ingestPages, MAX_PAGES_PER_BATCH } from './ingest';
 import { landingHtml } from './landing';
@@ -15,10 +15,15 @@ const CORS: Record<string, string> = {
   'access-control-max-age': '86400',
 };
 
-function withCors(res: Response): Response {
+function withCors(res: Response, path: string): Response {
   const h = new Headers(res.headers);
-  for (const [k, v] of Object.entries(CORS)) h.set(k, v);
   h.set('x-content-type-options', 'nosniff');
+  
+  // Only add CORS headers for browser-facing routes
+  if (path === '/mcp' || path === '/health' || path === '/' || path === 'OPTIONS') {
+    for (const [k, v] of Object.entries(CORS)) h.set(k, v);
+  }
+  
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
@@ -51,9 +56,51 @@ async function route(request: Request, env: Env): Promise<Response> {
     return json({ ok: true, name: 'ghost-from-the-past', version: VERSION, configured: Boolean(env.GHOST_SECRET) });
   }
 
-  if (!['/ingest', '/api/stats', '/mcp'].includes(path)) return json({ error: 'not found' }, 404);
+  if (!['/ingest', '/api/stats', '/api/verify', '/mcp'].includes(path)) return json({ error: 'not found' }, 404);
+  
+  // Rate limiting for sensitive routes (optional binding)
+  if (env.LIMITER && ['/ingest', '/api/stats', '/api/verify', '/mcp'].includes(path)) {
+    try {
+      const ip = request.headers.get('cf-connecting-ip') ?? 'local';
+      const { success } = await env.LIMITER.limit({ key: `${path}:${ip}` });
+      if (!success) {
+        return new Response(JSON.stringify({ error: 'rate limited' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json', 'retry-after': '60' }
+        });
+      }
+    } catch (e) {
+      // Limiter error: log but don't block the request
+      console.error('rate limiter error', (e as Error)?.message);
+    }
+  }
+  
+  // /api/verify does not require auth (it must work before the client trusts the server)
+  if (path === '/api/verify' && request.method === 'POST') {
+    if (!env.GHOST_SECRET) return json({ error: 'GHOST_SECRET is not set on this Worker. Run: npx wrangler secret put GHOST_SECRET' }, 503);
+    
+    const len = Number(request.headers.get('content-length') ?? '0');
+    if (len > 1024) return json({ error: 'body too large' }, 413);
+    const raw = await request.text();
+    if (raw.length > 1024) return json({ error: 'body too large' }, 413);
+    
+    let body: any;
+    try {
+      body = JSON.parse(raw);
+    } catch {
+      return json({ error: 'invalid json' }, 400);
+    }
+    
+    if (!body || typeof body.nonce !== 'string' || !/^[0-9a-f]{32,128}$/.test(body.nonce)) {
+      return json({ error: 'nonce must be a hex string, 32-128 chars' }, 400);
+    }
+    
+    const proof = await verifyProof(env.GHOST_SECRET, url.origin, body.nonce);
+    return json({ ok: true, proof });
+  }
+  
   if (!env.GHOST_SECRET) return json({ error: 'GHOST_SECRET is not set on this Worker. Run: npx wrangler secret put GHOST_SECRET' }, 503);
-  if (!(await authorised(request, env, path === '/mcp'))) {
+  if (!(await authorised(request, env, path === '/mcp' && env.ALLOW_QUERY_TOKEN === 'true'))) {
     return new Response(JSON.stringify({ error: 'unauthorised' }), {
       status: 401,
       headers: { 'content-type': 'application/json', 'www-authenticate': 'Bearer realm="ghost-from-the-past"' },
@@ -86,12 +133,14 @@ async function route(request: Request, env: Env): Promise<Response> {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/+$/, '') || '/';
     try {
-      return withCors(await route(request, env));
+      return withCors(await route(request, env), request.method === 'OPTIONS' ? 'OPTIONS' : path);
     } catch (e) {
       // Never log secrets or page content; message only.
       console.error('ghost error', (e as Error)?.message);
-      return withCors(json({ error: 'internal error' }, 500));
+      return withCors(json({ error: 'internal error' }, 500), path);
     }
   },
 } satisfies ExportedHandler<Env>;

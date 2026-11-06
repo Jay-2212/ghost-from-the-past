@@ -186,17 +186,18 @@ export async function getPage(env: Env, args: { url?: string; id?: string }) {
   return { ...pageSummary(row), markdown: row.content_md };
 }
 
-export async function forget(env: Env, args: { url?: string; domain?: string; from?: string; to?: string; tzOffsetMinutes?: number }) {
+export async function forget(env: Env, args: { ids?: string[]; url?: string }) {
   let ids: string[] = [];
-  if (args.url) {
+  if (args.ids) {
+    // Verify that these ids exist in the database
+    const placeholders = args.ids.map(() => '?').join(',');
+    const r = await env.DB.prepare(`SELECT id FROM pages WHERE id IN (${placeholders})`).bind(...args.ids).all<{ id: string }>();
+    ids = (r.results ?? []).map(x => x.id);
+  } else if (args.url) {
     const r = await env.DB.prepare('SELECT id FROM pages WHERE url = ? OR url = ?').bind(normaliseUrl(args.url), args.url).all<{ id: string }>();
     ids = (r.results ?? []).map(x => x.id);
-  } else if (args.domain || args.from || args.to) {
-    const f = filterSql({ domain: args.domain, from: args.from, to: args.to, tzOffsetMinutes: args.tzOffsetMinutes });
-    const r = await env.DB.prepare(`SELECT p.id FROM pages p WHERE ${f.sql}`).bind(...f.args).all<{ id: string }>();
-    ids = (r.results ?? []).map(x => x.id);
   } else {
-    throw new Error('forget needs url, domain or a date range');
+    throw new Error('forget needs ids or url');
   }
   for (let i = 0; i < ids.length; i += 50) {
     const batch = ids.slice(i, i + 50);

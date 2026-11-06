@@ -44,14 +44,15 @@
   }
 
   function getSettings() {
-    return chrome.storage.local.get(['paused', 'blocklist', 'workerUrl']);
+    return chrome.storage.local.get(['paused', 'blocklist', 'workerUrl', 'secret']);
   }
-  function allowed(s, url) {
+  function allowed(s, url, href) {
     if (s.paused) return false;
+    if (!(s.workerUrl && s.secret)) return false;
     var extra = [];
     try { if (s.workerUrl) extra.push(new URL(s.workerUrl).hostname); } catch (e) { /* ignore */ }
     var list = typeof s.blocklist === 'string' ? s.blocklist : GhostBlocklist.DEFAULT_BLOCKLIST;
-    return !GhostBlocklist.isBlocked(url, list, extra);
+    return !GhostBlocklist.isBlocked(url, list, extra) && (!href || !GhostBlocklist.isBlocked(href, list, extra));
   }
   function send(msg) {
     try {
@@ -62,7 +63,7 @@
   async function capture() {
     var st = state;
     var s = await getSettings();
-    if (!allowed(s, st.url)) return;
+    if (!allowed(s, st.url, location.href)) return;
     var res;
     try {
       res = await GhostPipeline.run(document, location.href, {});
@@ -77,7 +78,7 @@
     send({
       type: 'ghost:page',
       page: {
-        url: st.url, title: res.title, domain: res.domain, kind: res.kind, meta: res.meta, markdown: res.markdown,
+        url: st.url, href: location.href, title: res.title, domain: res.domain, kind: res.kind, meta: res.meta, markdown: res.markdown,
         excerpt: res.excerpt, lang: res.lang, firstSeen: st.firstSeen, extractor: res.extractor,
       },
     });
@@ -102,7 +103,7 @@
     var delta = state.activeMs - state.sentMs;
     if (delta >= 500) {
       state.sentMs = state.activeMs;
-      send({ type: 'ghost:time', url: state.url, deltaMs: delta, firstSeen: state.firstSeen });
+      send({ type: 'ghost:time', url: state.url, href: location.href, deltaMs: delta, firstSeen: state.firstSeen });
     }
   }
 

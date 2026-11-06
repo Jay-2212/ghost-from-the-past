@@ -17,7 +17,7 @@
       <p class="lead">Your memories live in <b>your own Cloudflare account</b>, so nobody else ever holds them. Click Deploy, and Cloudflare builds your private ghost in about a minute. Then come back here.</p>
       <div class="secretBox stack">
         <label for="secretOut">Your secret key</label>
-        <div class="row"><code class="codebox grow" id="secretOut">…</code><button class="btn" id="copySecret">Copy</button></div>
+        <div class="row"><code class="codebox grow" id="secretOut">…</code><button class="btn" id="toggleSecret" aria-pressed="false">Show</button><button class="btn" id="copySecret">Copy</button></div>
         <p class="hint">On the Deploy page, paste it into the <b>GHOST_SECRET</b> box. We copy it for you when you press Deploy.</p>
       </div>
       <button class="btn solid big" id="deploy">Deploy to Cloudflare</button>
@@ -26,7 +26,7 @@
       <div class="card offer stack" id="offer" hidden role="alertdialog" aria-labelledby="offerTitle">
         <h2 id="offerTitle">Connect to this ghost?</h2>
         <p class="mono" id="offerUrl"></p>
-        <p class="hint">Only say yes if this is the Worker you just deployed.</p>
+        <p class="hint">Only continue if you just deployed this Worker yourself. Ghost will check that it knows your secret before sending anything.</p>
         <div class="row"><button class="btn solid" id="offerYes">Yes, connect</button><button class="btn" id="offerNo">No</button></div>
       </div>
 

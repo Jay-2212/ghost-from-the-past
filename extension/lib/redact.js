@@ -43,6 +43,16 @@
     /\bxox[abprs]-[A-Za-z0-9-]{10,}\b/g,
     /\bAIza[0-9A-Za-z_-]{35}\b/g,
     /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
+    /\bhf_[A-Za-z0-9]{30,}\b/g,
+    /\bnpm_[A-Za-z0-9]{36}\b/g,
+    /\bya29\.[A-Za-z0-9_-]{20,}/g,
+    /https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9\/_-]+/g,
+    /https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+/g,
+    /\bxapp-[A-Za-z0-9-]{10,}\b/g,
+    /\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/g,
+    /\bdop_v1_[a-f0-9]{64}\b/g,
+    /\bshp(?:at|ss|ca|pa)_[a-fA-F0-9]{32}\b/g,
+    /AccountKey=[A-Za-z0-9+\/=]{40,}/g,
     /\b(?:api[_-]?key|secret|token|password|passwd|bearer)\s*[:=]\s*["']?[A-Za-z0-9_\-\/+=.]{16,}["']?/gi,
   ];
 
@@ -80,9 +90,21 @@
     page.markdown = redact(page.markdown, opts);
     page.title = redact(page.title, opts);
     page.excerpt = redact(page.excerpt, opts);
-    if (page.meta && typeof page.meta === 'object') {
-      for (var k in page.meta) if (typeof page.meta[k] === 'string') page.meta[k] = redact(page.meta[k], opts);
+    
+    // Recursively redact meta (depth limit 6)
+    function redactValue(val, depth) {
+      if (depth > 6) return val;
+      if (typeof val === 'string') return redact(val, opts);
+      if (Array.isArray(val)) return val.map(function (v) { return redactValue(v, depth + 1); });
+      if (val && typeof val === 'object' && Object.prototype.toString.call(val) === '[object Object]') {
+        var out = {};
+        for (var k in val) out[k] = redactValue(val[k], depth + 1);
+        return out;
+      }
+      return val;
     }
+    
+    if (page.meta) page.meta = redactValue(page.meta, 0);
     return page;
   }
 

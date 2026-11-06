@@ -38,7 +38,12 @@
     var f = (ctx && ctx.fetch) || (typeof fetch === 'function' ? fetch : null);
     if (!t || !t.baseUrl || !f) return '';
     try {
-      var r = await f(t.baseUrl + '&fmt=json3', { credentials: 'include' });
+      // Validate baseUrl: must be https and on youtube.com
+      var cu = new URL(t.baseUrl, 'https://www.youtube.com');
+      if (cu.protocol !== 'https:') return '';
+      if (cu.hostname !== 'youtube.com' && !cu.hostname.endsWith('.youtube.com')) return '';
+      
+      var r = await f(cu.href + '&fmt=json3', { credentials: 'same-origin' });
       if (!r.ok) return '';
       var body = await r.text();
       if (!body) return ''; // YouTube sometimes demands a proof-of-origin token and answers empty

@@ -2,7 +2,7 @@
 // Holds the local queue, redacts, enforces the blocklist/pause, and syncs batches to the user's own Worker.
 import './lib/blocklist.js';
 import './lib/redact.js';
-import { getSettings, setSettings, generateSecret, isAcceptableWorkerUrl, normaliseWorkerUrl, workerHost } from './lib/settings.js';
+import { getSettings, setSettings, generateSecret, isAcceptableWorkerUrl, normaliseWorkerUrl, workerHost, newNonce, proofFor } from './lib/settings.js';
 
 const B = globalThis.GhostBlocklist;
 const R = globalThis.GhostRedact;
@@ -90,17 +90,20 @@ chrome.alarms.onAlarm.addListener(a => {
 });
 
 // ---------- capture ----------
-async function allowedUrl(url) {
+async function allowedUrl(url, href) {
   const s = await getSettings();
   if (s.paused) return { ok: false, s };
+  if (!(s.workerUrl && s.secret)) return { ok: false, s };
   const host = workerHost(s);
-  return { ok: !B.isBlocked(url, s.blocklist, host ? [host] : []), s };
+  const urlBlocked = B.isBlocked(url, s.blocklist, host ? [host] : []);
+  const hrefBlocked = href && typeof href === 'string' ? B.isBlocked(href, s.blocklist, host ? [host] : []) : false;
+  return { ok: !urlBlocked && !hrefBlocked, s };
 }
 
 function onPage(page, sender) {
   return locked(async () => {
     if (!page || typeof page.url !== 'string' || typeof page.markdown !== 'string') return { ok: false };
-    const { ok, s } = await allowedUrl(page.url);
+    const { ok, s } = await allowedUrl(page.url, page.href);
     if (!ok) return { ok: false, blocked: true };
     R.redactPage(page, { emails: s.redactEmails !== false });
     const q = await getQueue();
@@ -140,7 +143,7 @@ function onTime(msg) {
   return locked(async () => {
     const delta = Math.max(0, Math.min(Number(msg.deltaMs) || 0, 3600 * 1000));
     if (!delta || typeof msg.url !== 'string') return { ok: false };
-    const { ok } = await allowedUrl(msg.url);
+    const { ok, s } = await allowedUrl(msg.url, msg.href);
     if (!ok) return { ok: false };
     const q = await getQueue();
     const k = keyOf(msg.url);
@@ -253,6 +256,31 @@ async function testConnection(workerUrl, secret) {
     const h = await fetchWithTimeout(`${url}/health`).then(r => r.json());
     if (!h || h.name !== 'ghost-from-the-past') return { ok: false, error: 'That address is not a Ghost from the Past Worker.' };
     if (h.configured === false) return { ok: false, error: 'The Worker has no GHOST_SECRET yet. Add it in Cloudflare (Settings → Variables and Secrets).' };
+    
+    // Proof challenge: Worker must prove it knows the secret before we send it
+    const nonce = newNonce();
+    const verifyRes = await fetchWithTimeout(`${url}/api/verify`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ nonce })
+    });
+    
+    if (verifyRes.status === 404) {
+      return { ok: false, error: 'This Worker is out of date. Redeploy it, then try again.' };
+    }
+    
+    if (!verifyRes.ok) {
+      return { ok: false, error: `Worker verify failed (${verifyRes.status}).` };
+    }
+    
+    const verifyData = await verifyRes.json();
+    const expectedProof = await proofFor(secret, url, nonce);
+    
+    if (verifyData.proof !== expectedProof) {
+      return { ok: false, error: 'That Worker could not prove it knows your secret, so the secret was not sent. Check the address, or paste the secret you set on the Worker.' };
+    }
+    
+    // Proof verified, now test with the actual secret
     const r = await fetchWithTimeout(`${url}/api/stats`, { headers: { authorization: `Bearer ${secret}` } });
     if (r.status === 401) return { ok: false, error: 'The Worker is alive, but the secret does not match.' };
     if (!r.ok) return { ok: false, error: `Worker answered ${r.status}.` };
@@ -317,6 +345,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const senderOrigin = sender.url ? new URL(sender.url).origin : '';
         if (!url || url !== senderOrigin || !isAcceptableWorkerUrl(url)) return { ok: false };
         if (s.onboarded && s.workerUrl) return { ok: false, already: true };
+        
+        // Throttle: only one offer every 10 seconds
+        const pending = await chrome.storage.local.get('pendingOffer');
+        if (pending.pendingOffer && pending.pendingOffer.at && (Date.now() - pending.pendingOffer.at) < 10000) {
+          return { ok: false, throttled: true };
+        }
+        
         await chrome.storage.local.set({ pendingOffer: { workerUrl: url, at: Date.now() } });
         await focusOnboarding();
         return { ok: true };

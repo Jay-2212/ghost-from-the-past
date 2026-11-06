@@ -15,6 +15,8 @@ test('default blocklist blocks sensitive categories', () => {
     'https://www.icicibank.com/personal-banking', 'https://www.paypal.com/myaccount', 'https://pay.google.com/', 'https://paytm.com/', 'https://www.phonepe.com/',
     'https://shop.example.com/checkout/step2', 'https://kite.zerodha.com/dashboard', 'https://mychart.example.org/MyChart/', 'https://myaadhaar.uidai.gov.in/',
     'https://eportal.incometax.gov.in/iec/foservices/', 'https://www.irs.gov/account', 'https://www.digilocker.gov.in/', 'https://github.com/settings/tokens',
+    'https://docs.google.com/document/d/x/edit', 'https://drive.google.com/drive/my-drive', 'https://www.notion.so/acme/Plan-123',
+    'https://acme.slack.com/archives/C1', 'https://acme.atlassian.net/wiki/x', 'https://chatgpt.com/c/1', 'https://claude.ai/chat/1', 'https://vault.zoho.com/',
   ];
   for (const u of blocked) assert.ok(B.isBlocked(u, D), `should block ${u}`);
 });
@@ -22,7 +24,8 @@ test('default blocklist blocks sensitive categories', () => {
 test('default blocklist allows ordinary reading', () => {
   const allowed = ['https://en.wikipedia.org/wiki/Ghost', 'https://developer.mozilla.org/en-US/docs/Web', 'https://github.com/Jay-2212/ghost-from-the-past',
     'https://www.youtube.com/watch?v=x', 'https://news.ycombinator.com/', 'https://www.reddit.com/r/Ghosts/comments/abc/x/', 'https://stackoverflow.com/questions/1/x',
-    'https://www.amazon.in/dp/B000', 'https://example.com/blog/how-to-pick-a-password-manager'];
+    'https://www.amazon.in/dp/B000', 'https://example.com/blog/how-to-pick-a-password-manager',
+    'https://developers.google.com/maps', 'https://slack.com/help/articles/1', 'https://acme.notion.site/Public-page', 'https://www.dropbox.com/features'];
   for (const u of allowed) assert.equal(B.matchUrl(u, D), null, `should allow ${u}`);
 });
 
@@ -54,4 +57,48 @@ test('redactPage covers title, excerpt and meta', () => {
   assert.equal(p.title, '[redacted-email]');
   assert.match(p.markdown, /\[redacted-card\]/);
   assert.equal(p.meta.author, '[redacted-email]');
+});
+
+test('redactPage: recursive meta redaction', () => {
+  const p = R.redactPage({ title: 'T', markdown: 'x', meta: { a: { b: ['card 4111111111111111'] } } });
+  assert.equal(p.meta.a.b[0], 'card [redacted-card]');
+});
+
+test('redact: expanded secret patterns', () => {
+  // Build fake tokens from string pieces so the repo never contains realistic literals
+  const hf = 'h' + 'f' + '_' + 'a'.repeat(34);
+  const npm = 'n' + 'pm' + '_' + 'a'.repeat(36);
+  const ya29 = 'y' + 'a29.' + 'a'.repeat(24);
+  const slack = 'ht' + 'tps://hooks.sl' + 'ack.com/services/T00/B00/xxx';
+  const discord = 'ht' + 'tps://discord.com/api/webhooks/123/abc';
+  const xapp = 'x' + 'app-' + 'a'.repeat(12);
+  const sendgrid = 'S' + 'G.' + 'a'.repeat(20) + '.' + 'b'.repeat(20);
+  const dopv1 = 'dop' + '_v1_' + 'a'.repeat(64);
+  const shopify = 'sh' + 'pat_' + 'a'.repeat(32);
+  const azureKey = 'Acc' + 'ountKey=' + 'abc+/='.repeat(10);
+  
+  assert.match(R.redact(hf), /^\[redacted-secret\]$/);
+  assert.match(R.redact(npm), /^\[redacted-secret\]$/);
+  assert.match(R.redact(ya29), /^\[redacted-secret\]$/);
+  assert.match(R.redact(slack), /^\[redacted-secret\]$/);
+  assert.match(R.redact(discord), /^\[redacted-secret\]$/);
+  assert.match(R.redact(xapp), /^\[redacted-secret\]$/);
+  assert.match(R.redact(sendgrid), /^\[redacted-secret\]$/);
+  assert.match(R.redact(dopv1), /^\[redacted-secret\]$/);
+  assert.match(R.redact(shopify), /^\[redacted-secret\]$/);
+  assert.match(R.redact(azureKey), /^\[redacted-secret\]$/);
+});
+
+test('hash-route SPAs blocked by path patterns', () => {
+  // Hash routes like #/login should be blocked
+  assert.ok(B.isBlocked('https://app.example.com/#/login', D), 'should block #/login');
+  assert.ok(B.isBlocked('https://x.example.com/#!/checkout/pay', D), 'should block #!/checkout/pay');
+  
+  // Non-route hashes should behave as before
+  const allowed1 = B.matchUrl('https://en.wikipedia.org/wiki/Ghost#History', D);
+  assert.equal(allowed1, null, 'wikipedia with anchor should be allowed');
+  
+  // mail.google.com is in the default blocklist, should be blocked regardless of hash
+  const blocked2 = B.isBlocked('https://mail.google.com/#inbox', D);
+  assert.ok(blocked2, 'mail.google.com with #inbox should be blocked by domain pattern');
 });

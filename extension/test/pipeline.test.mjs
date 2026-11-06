@@ -72,6 +72,16 @@ test('youtube: transcript flattened with timestamps when captions answer', async
   assert.equal(r.meta.transcript, 'yes');
 });
 
+test('youtube: transcript rejects evil baseUrl on another host', async () => {
+  const pr = { videoDetails: { videoId: 'v1', title: 'T', author: 'A', shortDescription: 'short desc here' }, captions: { playerCaptionsTracklistRenderer: { captionTracks: [{ baseUrl: 'https://evil.example/api/timedtext?x', languageCode: 'en' }] } } };
+  const fetchSpy = { called: false, fn: async () => { fetchSpy.called = true; return { ok: true, text: async () => '{}' }; } };
+  const r = await run(`<html><body><script>ytInitialPlayerResponse = ${JSON.stringify(pr)};</script></body></html>`, 'https://www.youtube.com/watch?v=v1', { fetch: fetchSpy.fn });
+  assert.equal(fetchSpy.called, false, 'fetch should not be called for evil baseUrl');
+  if (r && r.meta) {
+    assert.equal(r.meta.transcript, 'no');
+  }
+});
+
 test('reddit: JSON path gives post + top comments, skips AutoModerator and deleted', async () => {
   const c = (author, body, score) => ({ kind: 't1', data: { author, body, score, replies: '' } });
   const data = [

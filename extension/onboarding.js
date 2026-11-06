@@ -39,12 +39,31 @@ async function checkOffer() {
 }
 
 $('iam').onclick = () => show(2);
+
+let secretMasked = true;
+let fullSecret = '';
+
+function updateSecretDisplay() {
+  if (secretMasked && fullSecret.length >= 8) {
+    $('secretOut').textContent = fullSecret.slice(0, 4) + '…' + fullSecret.slice(-4);
+  } else {
+    $('secretOut').textContent = fullSecret;
+  }
+}
+
+$('toggleSecret').onclick = () => {
+  secretMasked = !secretMasked;
+  $('toggleSecret').textContent = secretMasked ? 'Show' : 'Hide';
+  $('toggleSecret').setAttribute('aria-pressed', secretMasked ? 'false' : 'true');
+  updateSecretDisplay();
+};
+
 $('copySecret').onclick = async () => {
-  await navigator.clipboard.writeText($('secretOut').textContent);
+  await navigator.clipboard.writeText(fullSecret);
   $('deployToast').textContent = 'Secret copied.';
 };
 $('deploy').onclick = async () => {
-  try { await navigator.clipboard.writeText($('secretOut').textContent); } catch { /* clipboard may be blocked; the Copy button still works */ }
+  try { await navigator.clipboard.writeText(fullSecret); } catch { /* clipboard may be blocked; the Copy button still works */ }
   $('deployToast').textContent = 'Secret copied. Paste it into GHOST_SECRET on the Cloudflare page, then press Deploy there.';
   chrome.tabs.create({ url: DEPLOY_URL });
 };
@@ -66,7 +85,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 const secret = await ensureSecret();
-$('secretOut').textContent = secret;
+fullSecret = secret;
+updateSecretDisplay();
 $('secretIn').value = secret;
 const s = await getSettings();
 if (s.workerUrl) $('workerUrl').value = s.workerUrl;
