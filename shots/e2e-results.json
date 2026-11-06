@@ -1,6 +1,6 @@
 {
   "base": "http://127.0.0.1:8787",
-  "at": "2026-11-05T22:34:20.907Z",
+  "at": "2026-11-06T02:32:06.583Z",
   "results": [
     {
       "name": "extension service worker loads",
@@ -70,12 +70,12 @@
     {
       "name": "search_memory finds the Wikipedia ghost article",
       "ok": true,
-      "detail": "https://en.wikipedia.org/wiki/Ghost | https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API | https://github.com/mozilla/readability"
+      "detail": "https://en.wikipedia.org/wiki/Ghost | https://github.com/mozilla/readability | https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API"
     },
     {
       "name": "search_memory with domain filter finds MDN",
       "ok": true,
-      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (5s, docs-page)"
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (0s, docs-page)"
     },
     {
       "name": "list_pages for today",

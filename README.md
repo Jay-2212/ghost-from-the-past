@@ -306,7 +306,7 @@ cd extension
 npm test
 ```
 
-27 tests covering extraction pipeline, privacy/blocklist/redaction, and blocklist-undo. Uses jsdom for DOM mocking.
+29 tests covering extraction pipeline, privacy/blocklist/redaction, and blocklist-undo. Uses jsdom for DOM mocking.
 
 ### End-to-End Tests (Playwright)
 

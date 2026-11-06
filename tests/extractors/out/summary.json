@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-11-05T22:20:02.381Z",
+  "timestamp": "2026-11-06T02:32:48.686Z",
   "timeout_ms": 30000,
-  "total": 10,
-  "passed": 4,
-  "failed": 2,
+  "total": 11,
+  "passed": 7,
+  "failed": 0,
   "blocked": 4,
   "results": [
     {
@@ -36,10 +36,12 @@
     {
       "name": "github-repo",
       "url": "https://github.com/mozilla/readability",
-      "status": "fail",
+      "status": "pass",
       "kind": "github-repo",
-      "chars": 7648,
-      "keyFields": []
+      "chars": 7515,
+      "keyFields": [
+        "description"
+      ]
     },
     {
       "name": "github-issue",
@@ -82,11 +84,24 @@
     },
     {
       "name": "news",
+      "url": "https://www.bbc.com/news/articles/cmn04705rd8jo",
+      "status": "pass",
+      "kind": "news-article",
+      "chars": 5929,
+      "keyFields": [
+        "published",
+        "title"
+      ]
+    },
+    {
+      "name": "news-section",
       "url": "https://www.bbc.com/news/world",
-      "status": "fail",
+      "status": "pass",
       "kind": "article",
-      "chars": 7035,
-      "keyFields": []
+      "chars": 7297,
+      "keyFields": [
+        "title"
+      ]
     },
     {
       "name": "mdn-docs",

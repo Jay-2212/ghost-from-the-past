@@ -11,13 +11,31 @@
           "lang": "en",
           "site": "Wikipedia"
         },
-        "firstSeen": "2026-11-05T22:33:48.741Z",
-        "lastSeen": "2026-11-05T22:33:53.079Z",
-        "activeMs": 4281,
+        "firstSeen": "2026-11-06T02:31:36.286Z",
+        "lastSeen": "2026-11-06T02:31:40.753Z",
+        "activeMs": 4383,
         "timeSpent": "4s",
         "visits": 1,
         "snippet": "# Ghost > Wikipedia article · en.wikipedia.org In [folklore](https://en.wikipedia.org/wiki/Folklore \"Folklore\"), a **ghost** is the [soul](https://en.wikipedia.org/wiki/Soul \"Soul\") or [spirit](https://en.wikipedia.org/wiki/Spirit_\\(supernatural_entity\\) \"Spirit (supernatural entity)\") of a dead [person](https://en.w…",
         "score": 0.03279
+      },
+      {
+        "id": "0922ceadb9edce27",
+        "url": "https://github.com/mozilla/readability",
+        "title": "mozilla/readability: A standalone version of the readability lib",
+        "domain": "github.com",
+        "kind": "github-repo",
+        "meta": {
+          "description": "A standalone version of the readability lib",
+          "repo": "mozilla/readability"
+        },
+        "firstSeen": "2026-11-06T02:31:48.425Z",
+        "lastSeen": "2026-11-06T02:31:53.067Z",
+        "activeMs": 4620,
+        "timeSpent": "4s",
+        "visits": 1,
+        "snippet": "and we **strongly** recommend you keep them that way. ## Security If you're going to use Readability with untrusted input (whether in HTML or DOM form), we **strongly** recommend you use a sanitizer library like [DOMPurify](https://github.com/cure53/DOMPurify) to avoid script injection when you use the output of Read…",
+        "score": 0.02759
       },
       {
         "id": "a8f48465fbb47497",
@@ -29,30 +47,13 @@
           "section": "Web › Web APIs › IndexedDB API",
           "site": "MDN Web Docs"
         },
-        "firstSeen": "2026-11-05T22:33:53.507Z",
-        "lastSeen": "2026-11-05T22:33:59.402Z",
-        "activeMs": 5862,
-        "timeSpent": "5s",
+        "firstSeen": "2026-11-06T02:31:41.316Z",
+        "lastSeen": "2026-11-06T02:31:43.862Z",
+        "activeMs": 0,
+        "timeSpent": "0s",
         "visits": 1,
         "snippet": "….indexedDB`](/en-US/docs/Web/API/WorkerGlobalScope/indexedDB) properties. It is therefore the entry point for the API. [`IDBOpenDBRequest`](/en-US/docs/Web/API/IDBOpenDBRequest) Represents a request to open a database. [`IDBDatabase`](/en-US/docs/Web/API/IDBDatabase) Represents a connection to a database. It's the on…",
         "score": 0.02753
-      },
-      {
-        "id": "0922ceadb9edce27",
-        "url": "https://github.com/mozilla/readability",
-        "title": "mozilla/readability: A standalone version of the readability lib. Contribute to mozilla/readability development by …",
-        "domain": "github.com",
-        "kind": "github-repo",
-        "meta": {
-          "repo": "mozilla/readability"
-        },
-        "firstSeen": "2026-11-05T22:34:00.659Z",
-        "lastSeen": "2026-11-05T22:34:05.256Z",
-        "activeMs": 4551,
-        "timeSpent": "4s",
-        "visits": 1,
-        "snippet": "Reference ### `new Readability(document, options)` The `options` object accepts a number of properties, all optional: - `debug` (boolean, default `false`): whether to enable logging. - `maxElemsToParse` (number, default `0` i.e. no limit): the maximum number of elements to parse. - `nbTopCandidates` (number, default…",
-        "score": 0.02744
       },
       {
         "id": "0f115db062b7c0dd",
@@ -61,9 +62,9 @@
         "domain": "example.com",
         "kind": "article",
         "meta": {},
-        "firstSeen": "2026-11-05T22:34:05.298Z",
-        "lastSeen": "2026-11-05T22:34:09.977Z",
-        "activeMs": 4639,
+        "firstSeen": "2026-11-06T02:31:53.078Z",
+        "lastSeen": "2026-11-06T02:31:57.872Z",
+        "activeMs": 4736,
         "timeSpent": "4s",
         "visits": 1,
         "snippet": "# Example Domain > Article · example.com This domain is for use in documentation examples without needing permission. This is not a service; avoid relying on it for testing and monitoring purposes. هذا النطاق مُخصص للاستخدام في أمثلة التوثيق دون الحاجة إلى إذن. هذه ليست خدمة، يُرجى تجنب الاعتماد عليها لأغراض الاختبار…",
@@ -83,10 +84,10 @@
           "section": "Web › Web APIs › IndexedDB API",
           "site": "MDN Web Docs"
         },
-        "firstSeen": "2026-11-05T22:33:53.507Z",
-        "lastSeen": "2026-11-05T22:33:59.402Z",
-        "activeMs": 5862,
-        "timeSpent": "5s",
+        "firstSeen": "2026-11-06T02:31:41.316Z",
+        "lastSeen": "2026-11-06T02:31:43.862Z",
+        "activeMs": 0,
+        "timeSpent": "0s",
         "visits": 1,
         "snippet": "…planation of key concepts. ## [Key concepts and usage](#key_concepts_and_usage) IndexedDB is a transactional database system, like an SQL-based Relational Database Management System (RDBMS). However, unlike SQL-based RDBMSes, which use fixed-column tables, IndexedDB is a JavaScript-based object-oriented database. Ind…",
         "score": 0.03252

@@ -1,10 +1,10 @@
-# mozilla/readability: A standalone version of the readability lib. Contribute to mozilla/readability development by …
+# mozilla/readability: A standalone version of the readability lib
 
 > GitHub repository · github.com
 
 **mozilla/readability**
 
-A standalone version of the readability lib. Contribute to mozilla/readability development by creating an account on GitHub.
+A standalone version of the readability lib
 
 ## README
 

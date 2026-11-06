@@ -1,5 +1,73 @@
-# World | Latest News & Updates | BBC News
+# Major tech stocks plunge as US midterms sparks fears of AI slowdown
 
-> Article · bbc.com
+> News article · bbc.com · Rachel Clun · 2026-11-05
 
-Skip to content        Site search           Watch Live                       Hoax bomb threats target European airlines and airports for second time in a week    At least 21 flights across Europe are affected in what the UK government calls a "malicious hoax threat".    5 hrs ago    Europe                    Who could be behind hoax bomb threats to European air travel?    There is no hard evidence so far linking airline bomb threats to Russia, Iran or any proxy groups.     2 hrs ago    Europe             Paraguay President Santiago Peña resigns after bank collapse    The move follows a bank collapse and after the lower house of congress voted in favour of pursuing an impeachment trial against him.    5 hrs ago    Latin America            Eight killed in series of shootings in western Turkey    Victims are found in several locations in three separate vehicles, according to local reports.    3 hrs ago    World                   California governor commutes sentences for state's 548 death row inmates    California has historically had the largest population of people on death row in the US.    54 mins ago    US &amp; Canada                   LIVE   What can Democrats do with control of Congress? We answer your US midterms questions   After winning both the Senate and the House from the Republicans, Democrats will control both chambers of Congress for the rest of Trump's term.                 French protests see numbers surge as unions join strikes over high cost of living    The interior ministry estimates 600,000 people joined protests across France, while the unions say the number was far higher.    4 hrs ago    Europe                     Major tech stocks plunge as US midterms add to fears of AI slowdown    The market has been reacting to possible tougher scrutiny of data centre construction and the AI industry following the US midterms                 Melania Trump calls for lasting Ukraine truce as she hosts Russian and Ukrainian officials    The US first lady was credited by all for playing a key though unspecified role in the ceasefire.                 Russell Brand is being investigated over two new rape complaints, police say    Det Supt Andy Furphy said he hoped other potential victims would gain "courage" and "confidence" from the guilty verdicts.                  The Pitt and ER are similar enough for lawsuit to proceed, judge rules    The widow of ER creator Michael Crichton argues The Pitt is effectively a reboot of the 1990s series.                 Pope Leo hosts Bob Dylan at official residence in Rome     Pope Leo had previously quoted Dylan's work in the preface of a book warning against nuclear rearmament.          Watch/Listen                Watch: How rapist Brand was never far from controversy    BBC correspondent Sima Kotecha explains how the trial unfolded.                 Was an Italian chef really fired over refusal to put pineapple on pizza?    The chef had stated that putting pineapple on pizza was "offensive to his culture".                 'I'm not a quitter': Kim Kardashian on retaking the bar exam    The All's Fair star tells the BBC she has not given up, but will be "more quiet" about her journey to become a lawyer.                 Film star Ranbir Kapoor on AI, movies and fatherhood    The film star plays the leading role in a major new adaptation of the Indian epic Ramayana.                 'All this food is now useless': Piles of rubbish after shop freezers hit by cyber-attack    Dozens of supermarkets in seven European countries dumped huge quantities of food after refrigerators and freezers were targeted in a cyber-attack.           More to explore                   Vance walks Trump tightrope with scathing election critique blaming Iran war    The vice-president's blunt assessment of Republican election defeat marked one of the sharpest breaks with a sitting president in recent memory.    19 hrs ago    US &amp; Canada                     Would you take a test to see if your life will be cut short? I did - and it changed me    Laura Sides faced a dilemma of whether to find out if she would inherit her father's condition.    22 hrs ago    Health                    ANC under pressure to reverse South Africa decline    As South Africans vote in local elections, residents tell the BBC they are tired of the poor quality of services they get.    1 day ago    Africa                     A bitter end for Ronaldo - the icon who transformed Portugal    As Cristiano Ronaldo retires from international football, Guillem Balague looks at why and what is next for the Portugal legend.     8 hrs ago    Portugal                    Why a US-funded vaccine trial on babies was cancelled in Guinea-Bissau    The trial was condemned as "unethical" and "neocolonial" because half of the babies would not be given the vaccine.    22 hrs ago    Africa             Latest updates          19 mins ago              Will Atiku Abubakar be on Nigeria's presidential ballot after court ruling?    The high court has sacked the leadership of the opposition ADC party with only months to go until elections.   19 mins ago             54 mins ago             California governor commutes sentences for state's 548 death row inmates    California has historically had the largest population of people on death row in the US.   54 mins ago             2 hrs ago                Inside Mississippi's ballot counting in tight Senate race    The BBC's Carl Nasman goes inside a county election commission building as votes are counted in the race between Democrat Scott Colom and Republican Cindy Hyde-Smith.   2 hrs ago             2 hrs ago             Who could be behind hoax bomb threats to European air travel?    There is no hard evidence so far linking airline bomb threats to Russia, Iran or any proxy groups.    2 hrs ago             3 hrs ago             Melania Trump calls for lasting Ukraine truce as she hosts Russian and Ukrainian officials    The US first lady was credited by all for playing a key though unspecified role in the ceasefire.   3 hrs ago             3 hrs ago              Boebert, billionaires' tax and other midterms races still to watch     Democrats have taken control of the House and Senate, and are eyeing some more with several key races still too close to call.   3 hrs ago             4 hrs ago             French protests see numbers surge as unions join strikes over high cost of living    The interior ministry estimates 600,000 people joined protests across France, while the unions say the number was far higher.   4 hrs ago             5 hrs ago             Hoax bomb threats target European airlines and airports for second time in a week    At least 21 flights across Europe are affected in what the UK government calls a "malicious hoax threat".   5 hrs ago             6 hrs ago              How America voted in maps and charts    See the maps and charts that show how America voted in the US midterm elections.   6 hrs ago          ...
+[image: Bloomberg via Getty Images Traders look concerned while looking at computer screens on the floor of the New York Stock Exchange.]Bloomberg via Getty Images
+
+Hundreds of billions of dollars in market value has been wiped from major tech firms in the US and Asia in a stock market rout after the US midterm elections sparked concerns of a slowdown in artificial intelligence development.
+
+Shares in firms across the tech and AI sectors plummeted following Democratic wins after election campaigns run on slowing AI.
+
+The tech-heavy Nasdaq composite index closed down by more than 5.5%, losing an estimated $2.5tn (£1.9tn) in market value, according to Dow Jones data, while other key US stock indexes also saw big losses in their worst days since 2025.
+
+The sell-off comes on top of broader concerns about whether the huge amounts being spent on AI will pay off.
+
+In Asia, tech-heavy indexes fell sharply on Friday morning as firms that make the computer chips and other equipment that power AI saw their shares slide.
+
+The Nikkei 225 in Japan was 6% lower in early trading as shares in memory chip maker Kioxia lost over 12.6% and rival Tokyo Electron slipped by 9.5%.
+
+South Korean chipmaker SK Hynix fell by more than 11.5%, while Samsung was down by nearly 10%.
+
+The sell-off in Seoul sent the Kospi index plunging more than 8.5%, triggering a so-called circuit breaker, a mechanism that temporarily halts trading to curb panic selling.
+
+"The Stock Market suffered one of the Worst Days in History based on the results of the Election," he said.
+
+"Remember, it wasn't Republicans, it was Dumocrats. Do not fear, however, we will soon, one way or the other, be BIGGER AND STRONGER THAN EVER BEFORE. MAKE AMERICA GREAT AGAIN!"
+
+Some Democrats have argued that AI has grown too big without any safeguards or oversight and have promised, with their new power in Congress, to change that.
+
+"Americans don't want Big Tech oligarchs wrecking the environment, gutting jobs and threatening humanity's future. NATIONAL DATA CENTER MORATORIUM NOW," Democrat Senator Bernie Sanders said in a post on X on Thursday.
+
+## 'Fresh panic' hits Wall Street
+
+Shares in companies heavily exposed to AI data centres, including crucial chipmakers and semiconductor manufacturers, fell sharply on Thursday, highlighting investor concerns that had already been growing.
+
+Nvidia shares slid more than 9%, knocking more than $400bn off the firm's market value.
+
+Other chipmakers also suffered, with AMD and Micron both dropping by more than 17%. Intel shares also dropped, down 10.3%, while memory card maker SanDisk plunged more than 22%.
+
+The Philadelphia Semiconductor Index, which tracks the performance of 30 of the largest companies involved in semiconductor production, fell by more than 12%.
+
+Shares in Elon Musk's companies SpaceX and Tesla also plunged, falling 8% and nearly 11% respectively and shaving more than $300bn off the firms' market value on Thursday.
+
+Musk had [spent nearly $450m](https://www.bbc.com/news/articles/cv8ez3p3ge5ko) backing Republican campaigns, including at least $45m in support of Ken Paxton for the Texas senate seat, but Texas was turned blue in [the Democratic tsunami](https://www.bbc.com/news/articles/cqkgjvr00zmyo) on Tuesday night.
+
+In total, the so-called magnificent seven tech companies, including Apple, Nvidia and Tesla, have shed a trillion dollars in value in a single trading day.
+
+The stock falls also hit other major US stock indexes. The S&P 500 index fell by 4.4% by the end of trading, while the Dow Jones Industrial Average erased gains made on Wednesday to close down more than 3.4%.
+
+The Nasdaq Composite fall was so large it is now in what market watchers call correction territory, which is where an index or company value falls at least 10% below its recent high.
+
+Susannah Streeter, chief investment strategist at Wealth Club, said the steep sell-off on the Nasdaq and the S&P 500 was sending shockwaves into other markets.
+
+"Fresh panic over the AI trade has hit Wall Street hard," she said.
+
+"Fears that the vast sums poured into AI infrastructure may not deliver the returns investors have been banking on are now colliding with the prospect of a sharp slowdown in data centre construction."
+
+Greater scrutiny of data centre approvals, and their impact on the environment and electricity bills could delay projects and raise costs across the industry, said Charu Chanana, Chief Investment Strategist at Saxo.
+
+While both political parties are keen to ensure the US' dominance in the technology, "there is a difference between supporting AI development and allowing infrastructure to expand at any cost or pace," she said.
+
+Some tech leaders have said they were caught off guard by the backlash against data centres in the midterms.
+
+OpenAI president and co-founder Greg Brockman said he believed everyone had been surprised by the reaction to data centres, and more work needed to be done to ensure communities were on board.
+
+"A lot of our shift over the course of this year has really been to realise that from San Francisco trying to build infrastructure in Texas, Georgia, and other places, you can't just tweet and say: 'This is going to be good.' You need to be in those communities," Brockman said at the WSJ Tech conference in Napa, California on Wednesday evening.
+
+Meta's president Dina Powell McCormick said that the industry needed to put more effort into selling AI as a good idea.
+
+"I think we need to double and triple down on telling the story," she told the WSJ conference.
+
+Alongside the immediate impacts of the US mid-term elections, some investors have become concerned that AI shares [could be in a bubble that is due a correction](https://www.bbc.co.uk/news/articles/cje36degrgv5o).
+
+_With additional reporting from Lily Jamali_
