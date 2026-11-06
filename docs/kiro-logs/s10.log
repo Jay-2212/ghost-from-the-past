@@ -1,0 +1,124 @@
+I'll implement these changes to make the worker deploy cleanly through the "Deploy to Cloudflare" button for free-tier users with no CLI steps.
+[tool] Creating task list: Make worker/ directory deploy cleanly through Deploy to C...
+[tool] status: Completed
+Let me start by reading the current state of the files I need to modify:
+[tool] Reading .dev.vars.example:1, package.json:1, env.ts:1, wrangler.jsonc:1
+[tool] status: Completed
+Now let me check index.ts and schema.ts to understand the current structure:
+[tool] status: Failed
+[tool] Reading index.ts:1
+[tool] status: Completed
+Now let me check the migrations directory and auth.test.ts:
+[tool] Reading 0001_init.sql:1, auth.test.ts:1
+[tool] status: Completed
+Perfect! Now I have all the context. Let me implement the changes:
+
+## CHANGE 1: Update .dev.vars.example and package.json
+[tool] Editing .dev.vars.example
+[tool] status: Completed
+[tool] Editing package.json
+[tool] status: Completed
+[tool] Completing #1
+[tool] status: Completed
+## CHANGE 2: Add secretConfigured() function and fail closed on weak/placeholder secrets
+[tool] Editing env.ts
+[tool] status: Completed
+Now update index.ts to use secretConfigured():
+[tool] Editing index.ts
+[tool] status: Completed
+[tool] Editing index.ts
+[tool] status: Completed
+[tool] Editing index.ts
+[tool] status: Completed
+[tool] Editing index.ts
+[tool] status: Completed
+Now update the authorised() function to use secretConfigured:
+[tool] Editing index.ts
+[tool] status: Completed
+Now add unit tests for secretConfigured:
+[tool] Editing auth.test.ts
+[tool] status: Completed
+[tool] Editing auth.test.ts
+[tool] status: Completed
+[tool] Completing #2
+[tool] status: Completed
+## CHANGE 3: Make Vectorize optional, D1 by default
+[tool] Editing wrangler.jsonc
+[tool] status: Completed
+[tool] Completing #3
+[tool] status: Completed
+## CHANGE 4: Migrations applied by deploy script + runtime safety net
+
+First, let me update package.json scripts:
+[tool] Editing package.json
+[tool] status: Completed
+Now create the schema.ts file with ensureSchema():
+[tool] Creating schema.ts
+[tool] status: Completed
+Now update index.ts to call ensureSchema() for routes that touch D1:
+[tool] Editing index.ts
+[tool] status: Completed
+Now I need to call ensureSchema before routes that touch D1. Let me look at where to add it:
+[tool] Reading index.ts:66-105
+[tool] status: Completed
+I need to add ensureSchema() after authentication but before DB access. Let me add it right after the authorised check and before handling specific routes:
+[tool] Editing index.ts
+[tool] status: Completed
+Now create a test for ensureSchema:
+[tool] Creating schema.test.ts
+[tool] status: Completed
+[tool] Completing #4
+[tool] status: Completed
+## Now run typecheck and tests
+[tool] Running: cd worker && npx tsc --noEmit
+[tool] status: Completed
+I need to fix these TypeScript errors. Let me start with the index.ts error:
+[tool] Reading index.ts:98-107
+[tool] status: Completed
+The issue is that verifyProof expects a string but env.GHOST_SECRET could be undefined. But we just checked secretConfigured() before this, so we know it's a string. Let me add a non-null assertion:
+[tool] Editing index.ts
+[tool] status: Completed
+Now fix the schema.test.ts issues:
+[tool] Editing schema.test.ts
+[tool] status: Completed
+Now run typecheck again:
+[tool] Running: cd worker && npx tsc --noEmit
+[tool] status: Completed
+Great! Now run vitest:
+[tool] Running: cd worker && npx vitest run
+[tool] status: Completed
+Perfect! Now run extension tests:
+[tool] Running: cd extension && npm test
+[tool] status: Completed
+Excellent! All tests pass. Let me complete the task:
+[tool] Completing #5
+[tool] status: Completed
+Perfect! All changes complete and verified. Here's a summary:
+
+## Summary of Changes
+
+All four changes implemented successfully to make the worker/ directory deploy cleanly through the "Deploy to Cloudflare" button for free-tier users with no CLI steps.
+
+### Files Changed:
+
+1. **worker/.dev.vars.example** - Blank secret field with helpful comments for both Deploy button and local dev
+2. **worker/package.json** - Updated cloudflare.bindings description with Deploy button instructions; added db:migrations:apply script
+3. **worker/src/env.ts** - Added `secretConfigured()` function that checks length >= 16 and rejects known placeholders
+4. **worker/src/index.ts** - Updated to use `secretConfigured()` everywhere; added `ensureSchema()` call for DB routes; updated 503 messages; added non-null assertion for GHOST_SECRET in verifyProof
+5. **worker/src/schema.ts** - NEW: Runtime schema safety net that mirrors 0001_init.sql, checks for pages table, applies DDL if missing, memoized per isolate
+6. **worker/wrangler.jsonc** - Removed vectorize binding (now optional); added comment showing how to add it back
+7. **worker/test/auth.test.ts** - Added comprehensive unit tests for `secretConfigured()` (9 new tests)
+8. **worker/test/schema.test.ts** - NEW: Unit tests for `ensureSchema()` (2 tests)
+
+### Verification Results:
+- ✅ Worker typecheck: clean (npx tsc --noEmit)
+- ✅ Worker tests: 45 tests passed in 6 files (vitest)
+- ✅ Extension tests: 36 tests passed (node --test)
+
+The worker now deploys cleanly for brand-new free-tier Cloudflare users with:
+- Blank secret field (required input on Deploy page) with clear instructions
+- No Vectorize questions (falls back to D1, can be added later)
+- Migrations applied automatically by the deploy script
+- Runtime safety net if migrations somehow didn't run
+- Fail-closed on weak/placeholder secrets
+EXIT 0
