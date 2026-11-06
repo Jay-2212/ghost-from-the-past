@@ -23,10 +23,10 @@ inclusion: always
 
 ### D1 + Vector Storage
 - **Primary**: D1 for pages, chunks, full-text search (FTS5 with porter unicode tokenization)
-- **Optional**: Vectorize index `ghost-memory` (384 dims, cosine distance) for semantic search
-- **Fallback**: D1VectorStore (vectors stored as JSON in `chunk_vectors` table, brute-force cosine) when Vectorize unavailable
+- **Default vectors**: D1VectorStore (vectors stored as JSON in the `chunk_vectors` table, brute-force cosine). Used whenever there is no `VECTORS` binding or `VECTOR_MODE=d1`; the shipped `wrangler.jsonc` has no Vectorize binding, so the Deploy button asks no Vectorize questions
+- **Optional**: Vectorize index `ghost-memory` (384 dims, cosine; `wrangler vectorize create ghost-memory --preset @cf/baai/bge-small-en-v1.5`, then add the commented `vectorize` binding) for faster semantic search at large scale
 - Graceful degradation: `src/embed.ts` exposes `Embedder` interface with `embedBatch(texts:string[]):Promise<number[][]>` (one AI call per page batch) plus `embed(text)`, with `WorkersAiEmbedder` (via `@cf/baai/bge-small-en-v1.5`, 384 dims) and `HashEmbedder` (deterministic hashed bag-of-words, L2-normalised)
-- Free tier: 5M stored dimensions ≈ 13k chunks (max 8 per page)
+- Vectorize free tier (if enabled): 5M stored dimensions ≈ 13k chunks (max 8 per page)
 
 ### Manifest V3
 - Service worker (type: module) with `background.js` as entry point
@@ -40,10 +40,10 @@ inclusion: always
 ### TypeScript & Wrangler
 - TypeScript 5.x, wrangler 4.x
 - `compatibility_date: "2026-11-01"`, `compatibility_flags: ["nodejs_compat"]`
-- Two environments: **production** (with Vectorize/AI bindings) and **local** (D1+D1VectorStore for dev/e2e)
-- Bindings: `DB` (D1, `ghost-memory`), `VECTORS` (Vectorize, 384 dims), `AI` (Workers AI)
+- Two environments: **production** (D1 + Workers AI; D1 vectors unless a Vectorize binding is added) and **local** (`EMBED_MODE=mock`, `VECTOR_MODE=d1`, for dev/e2e)
+- Bindings: `DB` (D1, `ghost-memory`), `AI` (Workers AI), `LIMITER` (optional rate limit); `VECTORS` (Vectorize, 384 dims) only if you opt in
 - Env vars: `EMBED_MODEL` = `@cf/baai/bge-small-en-v1.5`, `MAX_CHUNKS_PER_PAGE` = `8`, `EMBED_MODE`, `VECTOR_MODE`
-- Secret: `GHOST_SECRET` in `.dev.vars` (never committed; listed in `.dev.vars.example`)
+- Secret: `GHOST_SECRET` in `.dev.vars` for local dev (never committed). `.dev.vars.example` has it blank (`GHOST_SECRET=`), so the Deploy button shows it as a required field. The Worker treats a missing, short (< 16 chars) or placeholder secret as not configured and returns 503
 
 ### MCP SDK
 - Official `@modelcontextprotocol/sdk` v1.32+
@@ -75,13 +75,13 @@ chunk_vectors(chunk_id TEXT PRIMARY KEY,
 ## Security & Secrets
 
 - **Never log**: secrets, page content, bearer tokens
-- **Bearer auth**: compare with `crypto.subtle.timingSafeEqual` on equal-length SHA-256 hashes
+- **Bearer auth**: `worker/src/auth.ts` hashes the presented token and `GHOST_SECRET` with SHA-256 (`crypto.subtle.digest`), then compares the two 32-byte digests in a constant-time loop (`timingSafeCompare`: XOR every byte pair, OR into an accumulator, equal only if it is 0; no early exit). It does not use `crypto.subtle.timingSafeEqual`
 - **gitignore**: `node_modules/`, `.wrangler/`, `.dev.vars`, `shots/*.tmp` — **never** `.kiro/`
-- **Pre-commit hook**: scan `git diff --cached` for secret patterns (GHOST_SECRET=, Bearer tokens, CLOUDFLARE_API_TOKEN, .dev.vars)
+- **Secret guard**: `.kiro/hooks/secret-guard.mjs` runs as a `preToolUse` hook in the `ghost` agent (`.kiro/agents/ghost.json`) and blocks writes/commands with secret patterns (GHOST_SECRET=, Bearer tokens, Cloudflare tokens, 40+ char high-entropy strings, .dev.vars writes); on `git commit`/`git push` it also scans `git diff --cached`
 
 ## Testing Commands
 
-- Extension: `node --test extension/test`
+- Extension: `cd extension && npm test` (runs `node --test test/*.test.mjs`), or `node --test extension/test` from the root (on Node 22 that resolves to `extension/test/index.js`, which imports every `*.test.mjs`)
 - Worker: `cd worker && npm run test` (vitest)
 - E2E: `node tests/e2e/run.mjs` (Playwright, headless Chromium, local wrangler dev)
 - Type-check: `cd worker && npm run typecheck`

@@ -64,7 +64,7 @@
 ## Worker Ingest & Storage
 
 **R11. Worker Authentication**
-- R11.1: WHEN request includes Bearer token THEN the system SHALL compare with GHOST_SECRET using `crypto.subtle.timingSafeEqual` on equal-length SHA-256 hashes
+- R11.1: WHEN request includes Bearer token THEN the system SHALL hash it and GHOST_SECRET with SHA-256 and compare the equal-length digests in constant time (`timingSafeCompare` XOR loop in `src/auth.ts`)
 - R11.2: WHEN auth fails THEN return 401 JSON; WHEN GHOST_SECRET missing THEN 503 with clear message
 - R11.3: WHEN logging THEN never log secret, page content, or bearer tokens
 
@@ -105,7 +105,7 @@
 - R18.1: WHEN `search_memory({query, from?, to?, domain?, limit?})` THEN return ranked results: title, url, snippet (≤ 320 chars), first/last seen (ISO datetime), time spent (human-readable + ms), visits, score; all as text + structuredContent
 - R18.2: WHEN `list_pages({date?, from?, to?, domain?, limit?, offset?})` THEN return pages (title, url, domain, first/last seen, time spent) ordered by last_seen desc; `date` = single day `YYYY-MM-DD` (UTC unless `tz_offset_minutes` given); all as text + structuredContent
 - R18.3: WHEN `get_page({url?, id?})` THEN return full markdown with header block (title, url, dates, time spent); all as text
-- R18.4: WHEN `forget({url?, domain?, from?, to?, confirm})` THEN require at least one selector and `confirm: true`; delete pages, chunks, FTS, vectors; return count; annotate as destructive
+- R18.4: WHEN `forget({ids?, url?, confirm})` THEN require exact page `ids` (1–50) or one exact `url`, plus `confirm: true`; delete those pages, chunks, FTS, vectors; return count; annotate as destructive. There is no bulk delete by domain or date range (S9: page text must not be able to talk an AI into wiping memory)
 - R18.5: WHEN `memory_stats()` THEN return counts, top domains, total time; all as text + structuredContent
 
 ## CORS

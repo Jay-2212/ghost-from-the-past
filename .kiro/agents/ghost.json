@@ -1,0 +1,46 @@
+{
+  "name": "ghost",
+  "description": "Ghost from the Past dev agent: loads the steering and specs, blocks secrets before writes and commands, runs the fast tests after edits.",
+  "prompt": "You are working on Ghost from the Past: a Chrome MV3 extension (extension/, plain ES2022, no build step) plus a Cloudflare Worker (worker/, TypeScript, D1, MCP server). The steering files and specs in your context are the source of truth for conventions and scope.\n\nRules for this repo:\n- Never write, print or echo a real GHOST_SECRET, API token or key. Use placeholders (see worker/.dev.vars.example). Never write .dev.vars.\n- A preToolUse hook (.kiro/hooks/secret-guard.mjs) blocks writes and commands that contain secrets. If it blocks you, remove the secret instead of working around the hook.\n- A postToolUse hook runs the worker or extension tests after you edit files there. Read its output. A failing test is your next task, not something to ignore.\n- Do not commit or push unless the user asks.\n- Keep changes scoped to what was asked. Do not touch worker or extension source for documentation tasks.\n- Full checks before you report done: (cd worker && npm test && npm run typecheck), (cd extension && npm test), and node tests/e2e/run.mjs for end-to-end changes.",
+  "tools": ["*"],
+  "allowedTools": ["fs_read", "grep", "glob"],
+  "resources": [
+    "file://.kiro/steering/*.md",
+    "file://.kiro/specs/ghost-from-the-past/requirements.md",
+    "file://.kiro/specs/ghost-from-the-past/design.md",
+    "file://.kiro/specs/ghost-from-the-past/tasks.md"
+  ],
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "echo \"branch: $(git branch --show-current)\" && git status --short"
+      }
+    ],
+    "preToolUse": [
+      {
+        "matcher": "fs_write",
+        "command": "node .kiro/hooks/secret-guard.mjs"
+      },
+      {
+        "matcher": "execute_bash",
+        "command": "node .kiro/hooks/secret-guard.mjs"
+      },
+      {
+        "matcher": "code",
+        "command": "node .kiro/hooks/secret-guard.mjs"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "fs_write",
+        "command": "node .kiro/hooks/test-on-write.mjs",
+        "timeout_ms": 90000
+      }
+    ],
+    "stop": [
+      {
+        "command": "echo \"Reminder: run the full suites before you commit: (cd worker && npm test && npm run typecheck); (cd extension && npm test); node tests/e2e/run.mjs\""
+      }
+    ]
+  }
+}

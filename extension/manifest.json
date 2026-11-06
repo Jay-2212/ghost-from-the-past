@@ -64,11 +64,5 @@
   "incognito": "not_allowed",
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "ghost-from-the-past@jay-2212",
-      "strict_min_version": "121.0"
-    }
   }
 }

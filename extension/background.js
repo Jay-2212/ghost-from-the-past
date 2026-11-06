@@ -293,10 +293,12 @@ async function testConnection(workerUrl, secret) {
 
 async function focusOnboarding() {
   const url = chrome.runtime.getURL('onboarding.html');
-  const tabs = await chrome.tabs.query({ url });
+  // Firefox may reject a moz-extension:// match pattern or hide the URL without the "tabs" permission;
+  // then we just open a fresh onboarding tab, which reads the pending offer from storage.
+  const tabs = await chrome.tabs.query({ url }).catch(() => []);
   if (tabs[0]) {
     await chrome.tabs.update(tabs[0].id, { active: true });
-    if (tabs[0].windowId != null) chrome.windows.update(tabs[0].windowId, { focused: true }).catch(() => {});
+    if (tabs[0].windowId != null && chrome.windows) chrome.windows.update(tabs[0].windowId, { focused: true }).catch(() => {});
   } else await chrome.tabs.create({ url: `${url}#confirm` });
 }
 

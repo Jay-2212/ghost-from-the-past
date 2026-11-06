@@ -1,0 +1,128 @@
+[tool] Creating task list: S12 Firefox build: build scripts, Firefox compat, lint, t...
+[tool] Running: cd /workspace/work/gfp-rel && git status --short && git log --oneline | head -3 && cat extension/manifest.json && find extension -path extension/node_modules -prune -o -type f -print | sor...
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && cat extension/manifest.json; echo ---; find extension -path extension/node_modules -prune -o -type f -print | grep -v fixtures | sort; echo ---; cat extension...
+[tool] status: Completed
+[tool] Reading background.js:1
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel/extension && grep -noE "chrome\.[a-zA-Z]+(\.[a-zA-Z]+)*|browser\.[a-zA-Z]+|navigator\.[a-zA-Z]+(\.[a-zA-Z]+)?|importScripts|self\.|ServiceWorkerGlobalScope|clien...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel/extension && grep -n "chrome\.\|window\.\|postMessage\|fetch(" content.js popup.js onboarding.js | head -60; cat lib/settings.js | head -80; grep -n "fetch(" lib...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel/extension && grep -n "fetch\|XMLHttpRequest" lib/extractors/*.js lib/pipeline.js content.js | head; sed -n 1,60p content.js; sed -n 1,40p popup.js; sed -n 50,70p...
+[tool] status: Completed
+[tool] Fetching web content
+[tool] Fetching web content
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: cd /tmp && curl -sL https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/ -o dc.html && python3 - <<'EOF' import re,html t=open('/tmp/dc.html').read() t=re.sub(...
+[tool] status: Completed
+[tool] Running: cd /tmp && python3 - <<'EOF' import re,html t=open('/tmp/dc.html').read() t=re.sub(r'<script.*?</script>|<style.*?</style>','',t,flags=re.S) t=html.unescape(re.sub(r'<[^>]+>',' ',t)) t=re....
+[tool] status: Completed
+[tool] Running: curl -sL "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/query" | python3 -c " import re,html,sys t=sys.stdin.read();t=re.sub(r'<script.*?</script>|<style....
+[tool] status: Completed
+[tool] Running: which firefox firefox-esr geckodriver 2>&1; ls ~/.cache/ms-playwright 2>/dev/null; cd /workspace/work/gfp-rel && ls node_modules/.bin | grep -i -E "playwright|web-ext"; grep -n "closeTab\|...
+[tool] status: Completed
+[tool] Editing background.js
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && python3 -c " import zipfile;z=zipfile.ZipFile('release/ghost-from-the-past-extension-v1.0.0.zip') for i in z.infolist(): print(i.filename, i.compress_type, i....
+[tool] status: Completed
+[tool] Creating pack.mjs
+[tool] status: Completed
+[tool] Creating build-firefox.mjs
+[tool] Creating build-chrome.mjs
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && node scripts/build-firefox.mjs && node scripts/build-chrome.mjs && cat dist/firefox/manifest.json | head -40 && python3 -c " import zipfile for f in ['release...
+[tool] status: Completed
+Both zips build and validate. Now web-ext lint, installed in a temp dir.
+[tool] Running: mkdir -p /tmp/webext && cd /tmp/webext && (test -x node_modules/.bin/web-ext || npm install --no-audit --no-fund --silent web-ext@latest >/dev/null 2>&1); ./node_modules/.bin/web-ext --ver...
+[tool] status: Completed
+[tool] Running: cd /tmp/webext && npm install --no-audit --no-fund web-ext@latest 2>&1 | tail -15
+[tool] status: Completed
+[tool] Running: cd /tmp/webext && echo '{"name":"webext-tmp","private":true}' > package.json && npm install --prefix /tmp/webext --no-audit --no-fund web-ext@latest 2>&1 | tail -5; ls node_modules/.bin | ...
+[tool] status: Completed
+[tool] Running: cd /tmp/webext && ./node_modules/.bin/web-ext --version && ./node_modules/.bin/web-ext lint -s /workspace/work/gfp-rel/dist/firefox --no-config-discovery 2>&1 | tail -60
+[tool] status: Completed
+[tool] Running: cd /tmp/webext && ./node_modules/.bin/web-ext lint -s /workspace/work/gfp-rel/dist/firefox --no-config-discovery -o json 2>/dev/null | python3 -c " import json,sys;d=json.load(sys.stdin) f...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel/extension && sed -n 1540,1552p vendor/Readability.js; sed -n 1922,1931p vendor/Readability.js
+[tool] status: Completed
+[tool] Editing build-firefox.mjs
+[tool] Editing build-firefox.mjs
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && node scripts/build-firefox.mjs && node -e "console.log(JSON.stringify(require('./dist/firefox/manifest.json').browser_specific_settings,null,1), Object.keys(r...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel/extension && npm test 2>&1 | tail -12
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && timeout 600 node tests/e2e/run.mjs 2>&1 | tail -40
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && timeout 600 npx playwright install chromium 2>&1 | tail -3 && timeout 900 node tests/e2e/run.mjs 2>&1 | tail -40
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && timeout 600 ./node_modules/.bin/playwright-core install chromium 2>&1 | tail -8
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && git stash list | head -2; cp shots/e2e-results.json /tmp/e2e-results.before.json 2>/dev/null; timeout 900 node tests/e2e/run.mjs 2>&1 | tail -40
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && grep -n -B25 "pages captured into the local queue" tests/e2e/run.mjs | head -60
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && timeout 900 node tests/e2e/run.mjs 2>&1 | grep -E "FAIL|PASS pages|checks passed|visited"
+[tool] status: Completed
+[tool] Running: ps aux | grep -E "wrangler|workerd|chrom" | grep -v grep | awk '{print $2, $11, $12, $13, $14}' | head; grep -n "dev.vars\|8787\|spawn\|kill" /workspace/work/gfp-rel/tests/e2e/run.mjs | he...
+[tool] status: Completed
+[tool] Running: kill 32559 32566 32589 32629 2>/dev/null; sleep 2; ps aux | grep -E "wrangler|workerd" | grep -v grep | wc -l; ls /workspace/work/gfp-rel/worker/.dev.vars 2>&1
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && timeout 900 node tests/e2e/run.mjs 2>&1 | grep -E "FAIL|PASS pages|PASS landing|PASS onboarding asks|checks passed"; sleep 2; ps aux | grep -E "wrangler|worke...
+[tool] status: Completed
+[tool] Running: kill 1152 1159 1183 1209 2>/dev/null; cd /workspace/work/gfp-rel && git status --short | grep -v "extension/node_modules"
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && ls -l --time-style=+%H:%M:%S shots/ | head -30; git show HEAD:shots/e2e-results.json | head -5; head -5 shots/e2e-results.json; head -5 /tmp/e2e-results.befor...
+[tool] status: Completed
+E2E runs overwrote committed screenshots and `shots/e2e-results.json` (all mtimes are from this session; README cites the deployed-run version). Restoring those to HEAD.
+[tool] Running: cd /workspace/work/gfp-rel && git checkout -- shots/e2e-results.json shots/mcp-get_page-wikipedia.md shots/mcp-search-results.json shots/onboarding-1-welcome.png shots/onboarding-2-cloudfl...
+[tool] status: Completed
+[tool] Editing README.md
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && grep -n "Firefox" README.md; git diff --stat README.md
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && node scripts/build-firefox.mjs && node scripts/build-chrome.mjs && (cd /tmp/webext && ./node_modules/.bin/web-ext lint -s /workspace/work/gfp-rel/dist/firefox...
+[tool] status: Completed
+[tool] Completing #1, #2, #3, #4, #5, #6, #7
+[tool] status: Completed
+The Firefox package builds and passes `web-ext lint` with 0 errors. The Chrome build is unchanged, the extension tests pass 36/36, and nothing is committed.
+
+## Files changed
+- **`scripts/build-firefox.mjs`** (new): copies `extension/` to `dist/firefox/`, leaving out `node_modules`, `test` and the package files. It writes a Firefox manifest there and zips the result to `release/ghost-from-the-past-firefox-v1.0.0.zip`. The manifest changes are:
+  - `background: { scripts: ["background.js"], type: "module" }`, because `background.js` is an ES module.
+  - `gecko.id` is `ghost-from-the-past@jay-2212.github.io` and `strict_min_version` is `140.0`. That is the first Firefox desktop release with built-in data-collection consent, which AMO now requires for new add-ons. It also covers module background scripts and MV3 host permissions granted at install. I added `gecko_android.strict_min_version: "142.0"` to clear a lint warning about Android.
+  - `data_collection_permissions.required` is `["browsingActivity", "websiteContent"]`. AMO policy counts anything handled outside the add-on or the local browser as data transmission, even when it goes to a server the user owns. Ghost sends the URL, title, reading time and page text to the user's Worker, so `"none"` would be false. The data is required because capture is the whole product.
+  - The script removes known Chrome-only keys and permissions. The current manifest has none, so in practice only the background key changes.
+- **`scripts/build-chrome.mjs`** (new): zips `extension/` as it is to `release/ghost-from-the-past-chromium-v1.0.0.zip`. The manifest inside is byte-identical to `extension/manifest.json`.
+- **`scripts/lib/pack.mjs`** (new): the shared file list and a dependency-free zip writer. It uses fixed timestamps, so the same sources produce the same zip.
+- **`extension/background.js`**: one fallback in `focusOnboarding()`. Firefox may reject a `chrome.tabs.query({url})` call on a `moz-extension://` address, so a failure now just opens a new onboarding tab, which reads the pending offer from storage. The `chrome.windows` call is also feature-checked. Chrome behaves as before.
+- **`README.md`**: a Firefox paragraph in the install section covering how to build and load it, the temporary add-on behaviour, the data-consent prompt, and the Chromium zip.
+- Generated, untracked: `dist/firefox/` (already gitignored), plus the two new zips in `release/`.
+
+## Chrome-only API audit
+The code uses no `offscreen`, `sidePanel` or service-worker-only globals. Every API it calls (`storage`, `alarms`, `tabs`, `runtime`, `action` and `extension.inIncognitoContext`) is promise-based and available on Firefox's `chrome.*` namespace. `setBadgeTextColor` was already feature-checked. `focusOnboarding()` was the only change needed.
+
+## web-ext lint (web-ext 10.8.0, installed in `/tmp/webext`)
+0 errors, 0 notices, 2 warnings. Both warnings are `UNSAFE_VAR_ASSIGNMENT` in the vendored `vendor/Readability.js` (lines 1550 and 1929). They are upstream Mozilla code that restores the page's own HTML into a cloned document, and upstream marks both lines with `eslint-disable no-unsanitized`. I left them alone because we keep vendored files unmodified.
+
+## Tests
+- **Extension `npm test`:** 36/36 passed.
+- **End-to-end (`node tests/e2e/run.mjs`, local):** 28/28 passed after my change. Two earlier runs failed:
+  - The first run hit 27/28 on "pages captured into the local queue", because GitHub was slow to capture.
+  - The second run failed because the first run's wrangler process was still holding port 8787.
+
+  I killed the stray wrangler, and the clean run passed.
+- **Worker tests:** not run, because nothing in `worker/` changed.
+- **Screenshots:** the e2e runs overwrote the committed `shots/*.png` files and `shots/e2e-results.json`. The README cites the deployed-run results in that JSON file, so I restored all of them from git.
+
+## Left to do
+- I haven't loaded the add-on in a real Firefox, because there's no Firefox binary here. Lint checks the manifest and code statically but doesn't run them. Someone should load `dist/firefox/manifest.json` in Firefox 140+ and walk through onboarding → connect → capture → sync.
+- AMO submission and signing are not done. Signing needs an AMO account and API keys.
+- `extension/manifest.json` already had an uncommitted change from S11b that removed an old `browser_specific_settings` block. I didn't touch it.
+- I didn't change the old `release/ghost-from-the-past-extension-v1.0.0.zip`. The new `-chromium-` zip doesn't replace it; you can decide whether to keep both.
+EXIT 0

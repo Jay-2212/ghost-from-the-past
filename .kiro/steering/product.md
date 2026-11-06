@@ -1,3 +1,7 @@
+---
+inclusion: always
+---
+
 # Ghost from the Past — Product Vision
 
 ## Vision Statement
@@ -18,8 +22,8 @@ A personal, privacy-first browser memory for knowledge workers, researchers, and
 - **No syncing to our infrastructure.** The extension talks only to your Worker. We never see the URLs or content.
 - **Incognito is never captured.** Private browsing stays private.
 - **You control redaction and blocklisting.** Strip e-mails, card numbers, and secret tokens by default. Block entire sites or patterns.
-- **You can forget.** The `forget` tool in MCP can delete pages, domains, or date ranges.
-- **You can delete everything.** Delete the Worker, the D1 database, and the Vectorize index. Ghosting is complete.
+- **You can forget.** The `forget` tool in MCP deletes the exact pages you name: up to 50 page ids, or one exact URL, and only with `confirm: true`. There is no bulk delete by domain or date range, so text inside a remembered page can't talk an AI into wiping your memory; to forget a site, list its pages first and pass their ids.
+- **You can delete everything.** Delete the Worker and the D1 database (and the Vectorize index, if you opted into one). Ghosting is complete.
 
 ## Non-Goals
 

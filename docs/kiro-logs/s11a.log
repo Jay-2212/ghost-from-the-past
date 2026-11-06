@@ -1,0 +1,46 @@
+I'll start by looking at the existing hooks and agent setup.
+[tool] Running: cd /workspace/work/gfp-rel && git status --short | head -20; git branch --show-current; ls -la .kiro .kiro/hooks .kiro/agents .kiro/specs/* 2>&1; for f in .kiro/hooks/*; do echo "=== $f"; ...
+[tool] Running: cd /workspace/work/gfp-rel && ls docs/reviews 2>&1; grep -n -i -B2 -A8 "hook" docs/reviews/final-audit-kiro-opus.md | head -80; node --version; cat .gitignore
+[tool] status: Completed
+[tool] status: Completed
+Before writing anything, I'll check the official hook format and event JSON shape.
+[tool] Introspecting
+[tool] Fetching web content
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && which kiro-cli kiro; grep -rn "getRandomValues" extension --include=*.js -l | grep -v vendor | head; grep -rn -B2 -A6 "getRandomValues" extension/lib/*.js ext...
+[tool] status: Completed
+`kiro-cli` is installed, so I can validate the agent file against the real schema. Next I'll check the CLI version, find other references to the old hook files, and see how fast the fast tests run.
+[tool] Running: cd /workspace/work/gfp-rel && kiro-cli --version; kiro-cli agent --help 2>&1 | head -20; echo ---; grep -rn "test-on-save\|secret-guard\|PostFileSave" --include=* -I . 2>/dev/null | grep -...
+[tool] Running: cd /workspace/work/gfp-rel && (time (cd worker && npx vitest run --reporter=dot 2>&1 | tail -8)) 2>&1 | tail -14; (time node --test extension/test 2>&1 | tail -12) 2>&1 | tail -18
+[tool] status: Completed
+[tool] status: Completed
+The worker suite takes 20–38s, which is slow for a hook. `node --test extension/test` fails as written under Node 22, so I'll look at that.
+[tool] Running: cd /workspace/work/gfp-rel && node --test extension/test 2>&1 | head -15; echo ----; (time node --test "extension/test/*.test.mjs" 2>&1 | tail -10) 2>&1 | tail -16; (cd extension && node -...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && kiro-cli agent schema 2>&1 | head -150
+[tool] status: Completed
+`kiro-cli agent validate` will check the agent file once it exists. I'll rewrite the guard first. It will keep its legacy stdin and staged-diff behaviour and add the hook-event path.
+[tool] Creating secret-guard.mjs
+[tool] status: Completed
+Now the postToolUse script.
+[tool] Creating test-on-write.mjs
+[tool] status: Completed
+The "run only when executed directly" guard I added is unnecessary and breaks on paths with spaces. I'll simplify it.
+[tool] Running: cd /workspace/work/gfp-rel/.kiro/hooks && python3 - <<'EOF' p='test-on-write.mjs' s=open(p).read() s=s.replace("export function suiteFor","function suiteFor") old=s[s.index("if (import.met...
+[tool] status: Completed
+Now the agent file. I'll replace the old hook JSON files and validate with the real CLI.
+[tool] Creating ghost.json
+[tool] Running: cd /workspace/work/gfp-rel && rm .kiro/hooks/secret-guard.json .kiro/hooks/test-on-save.json && ls .kiro/hooks .kiro/agents && kiro-cli agent validate --path .kiro/agents/ghost.json 2>&1; ...
+[tool] status: Completed
+[tool] status: Completed
+`validate` printed nothing and exited 0, which tells me little. I'll confirm it rejects a broken file, then try a live run of the agent.
+[tool] Running: cd /tmp && echo '{"name":"bad","hooks":{"preToolUse":[{"matcher":"x"}]},"tools":"nope"}' > bad.json && kiro-cli agent validate --path bad.json; echo "bad exit=$?"; cd /workspace/work/gfp-r...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && G=.kiro/hooks/secret-guard.mjs FAKE=$(node -e "const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';const b=require('crypto').randomBytes(...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && G=.kiro/hooks/secret-guard.mjs sed -i 's|/\[A-Za-z0-9_\\-+=\]{40,}/g|/[A-Za-z0-9_\\-+]{40,}={0,2}/g|' $G && grep -n "{40,}={0,2}" $G cat > /tmp/cases.mjs <<'E...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/gfp-rel && G=.kiro/hooks/secret-guard.mjs echo "== reported length after charset fix"; node -e 'const c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";...
+[tool] Running: cd /workspace/work/gfp-rel && cat > /tmp/sweep.mjs <<'EOF' import { spawnSync, execFileSync } from 'node:child_process'; import fs from 'node:fs'; const files = execFileSync('git', ['ls-fi...
+[tool] status: Completed

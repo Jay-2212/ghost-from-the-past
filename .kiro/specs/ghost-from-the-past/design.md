@@ -107,7 +107,7 @@
 - `ALL /mcp` → auth (header or query token) → call `handleMcp()`
 
 **src/auth.ts**
-- `verifyBearer(header, secret)` → boolean (timingSafeEqual on SHA-256)
+- `verifyBearer(header, secret)` → boolean (SHA-256 both values, then `timingSafeCompare`: constant-time XOR loop over the 32-byte digests)
 - `hashSecret(secret)` → hex string
 
 **src/ingest.ts**
@@ -357,11 +357,11 @@ CREATE TABLE chunk_vectors (
 ## Security & Privacy Design
 
 - **No central server**: all data in user's Cloudflare account
-- **Bearer auth**: timingSafeEqual SHA-256 hash comparison prevents timing attacks
+- **Bearer auth**: both values are hashed with SHA-256 and the digests compared in a constant-time XOR loop (`timingSafeCompare` in `src/auth.ts`), which prevents timing attacks
 - **Incognito never captured**: double-checked in content script and background
 - **Redaction default-on**: emails, cards, secrets, SSN-like patterns masked before sync
 - **Blocklist enforcement**: URLs matching blocklist never queued
-- **Secret rotation**: user can regenerate GHOST_SECRET in options; old requests fail
+- **Secret rotation** (manual; a regenerate button in Options is future work): set a new GHOST_SECRET on the Worker (`wrangler secret put` or the dashboard), then paste the same value into Options → Secret and Save; requests with the old secret fail
 - **No analytics**: no tracking pixels, no external requests
 - **Encryption at rest**: D1 data encrypted by Cloudflare; user responsible for account security
 - **Token scope**: single bearer token grants full read/write access (appropriate for single user)
