@@ -8,8 +8,43 @@
     order: 90,
     match: function (url, doc) {
       if (!doc) return false;
-      if (h.findLd(doc, NEWS)) return true;
-      return h.metaContent(doc, 'og:type') === 'article' && !!h.metaContent(doc, 'article:published_time') && !!h.metaContent(doc, 'article:section');
+      
+      // Reject obvious section/index paths (BBC-style: /news/world, /news/business without article ID)
+      try {
+        var u = new URL(url);
+        var path = u.pathname;
+        // BBC patterns: /news/articles/<id> or /news/<section>-<digits> are articles; /news/<word> is a section
+        if (/bbc\.(co\.|com)/.test(u.hostname) && /^\/news\/[a-z]+\/?$/i.test(path)) return false;
+        // Generic: paths ending in just a word (no ID/slug) are likely sections
+        if (/\/(news|world|business|sport|tech|entertainment|politics|science|health)\/?$/i.test(path)) return false;
+      } catch (e) { /* ignore URL parse errors */ }
+      
+      // Check for article JSON-LD types
+      var ld = h.findLd(doc, NEWS);
+      if (ld) {
+        // Require headline or name to confirm it's an article, not just metadata
+        if (ld.headline || ld.name) return true;
+      }
+      
+      // Check for CollectionPage/WebPage/ItemList types which indicate section pages
+      var allLd = h.jsonLd(doc);
+      for (var i = 0; i < allLd.length; i++) {
+        var types = h.ldTypes(allLd[i]);
+        for (var j = 0; j < types.length; j++) {
+          if (/^(CollectionPage|WebPage|ItemList)$/i.test(types[j])) {
+            // If it's ONLY these types (no article type), reject
+            if (!ld) return false;
+          }
+        }
+      }
+      
+      // Fallback: og:type=article with published_time
+      if (h.metaContent(doc, 'og:type') === 'article') {
+        var published = h.metaContent(doc, 'article:published_time') || h.metaContent(doc, 'datePublished');
+        if (published) return true;
+      }
+      
+      return false;
     },
     extract: function (doc, url, ctx) {
       var g = P.generic(doc, url, ctx);

@@ -163,3 +163,70 @@ test('news: NewsArticle JSON-LD adds author/date/section', async () => {
   assert.equal(r.meta.section, 'Weird');
   assert.match(r.markdown, /> News article · news\.example\.com · A\. Reporter · 2026-10-31/);
 });
+
+test('github: og:description fallback with boilerplate stripping', async () => {
+  // GitHub repo with description only in og:description meta tag
+  const html = `<html><head>
+    <meta property="og:description" content="GitHub - mozilla/readability: A standalone version of the readability lib - mozilla/readability">
+    <meta name="description" content="A standalone version of the readability lib. Contribute to mozilla/readability development by creating an account on GitHub.">
+    </head><body>
+    <article class="markdown-body"><h1>Readability.js</h1><p>${lorem(4)}</p></article>
+    </body></html>`;
+  const r = await run(html, 'https://github.com/mozilla/readability');
+  assert.equal(r.kind, 'github-repo');
+  assert.match(r.markdown, /^.*mozilla\/readability/);
+  // Check that description was extracted and stripped
+  assert.match(r.markdown, /A standalone version of the readability lib/);
+  assert.doesNotMatch(r.markdown, /GitHub - mozilla\/readability:/);
+  assert.doesNotMatch(r.markdown, /Contribute to .+ development by creating an account/);
+  // Check meta.description is present and capped
+  assert.ok(r.meta.description);
+  assert.match(r.meta.description, /A standalone version of the readability lib/);
+  assert.ok(r.meta.description.length <= 300);
+  
+  // Test suffix regex: description with " - " in it should not be eaten
+  const html2 = `<html><head>
+    <meta property="og:description" content="GitHub - user/repo: This is a real - description with dashes/slashes - user/repo">
+    </head><body><article class="markdown-body"><h1>README</h1><p>${lorem(4)}</p></article></body></html>`;
+  const r2 = await run(html2, 'https://github.com/user/repo');
+  assert.ok(r2.meta?.description);
+  assert.match(r2.meta.description, /This is a real - description with dashes\/slashes/);
+  assert.doesNotMatch(r2.meta.description, /user\/repo/);
+  
+  // Test boilerplate-only description (no leading ". ")
+  const html3 = `<html><head>
+    <meta name="description" content="Contribute to user/repo development by creating an account on GitHub.">
+    </head><body><article class="markdown-body"><h1>README</h1><p>${lorem(4)}</p></article></body></html>`;
+  const r3 = await run(html3, 'https://github.com/user/repo');
+  assert.equal(r3.meta?.description, undefined, 'Boilerplate-only description should be empty');
+});
+
+test('news: section pages rejected, real articles matched', async () => {
+  // BBC section page should NOT match news extractor
+  const sectionLd = { '@type': 'CollectionPage', name: 'World' };
+  const section = await run(
+    `<html><head><script type="application/ld+json">${JSON.stringify(sectionLd)}</script></head>
+    <body><h1>World News</h1><div>${lorem(3)}</div></body></html>`,
+    'https://www.bbc.com/news/world'
+  );
+  assert.notEqual(section.kind, 'news-article', 'Section page should not be news-article');
+  
+  // BBC article with NewsArticle JSON-LD SHOULD match
+  const articleLd = { '@type': 'NewsArticle', headline: 'Breaking news story', datePublished: '2026-11-01' };
+  const article = await run(
+    `<html><head>
+    <meta property="og:type" content="article">
+    <meta property="article:published_time" content="2026-11-01T10:00:00Z">
+    <script type="application/ld+json">${JSON.stringify(articleLd)}</script>
+    </head><body><article><h1>Breaking news story</h1><p>${lorem(8)}</p></article></body></html>`,
+    'https://www.bbc.com/news/articles/abc123'
+  );
+  assert.equal(article.kind, 'news-article', 'Real article should be news-article');
+  
+  // Generic /news/business path should be rejected
+  const genericSection = await run(
+    `<html><body><h1>Business News</h1><div>${lorem(3)}</div></body></html>`,
+    'https://example.com/news/business'
+  );
+  assert.notEqual(genericSection.kind, 'news-article', 'Generic section path should not be news-article');
+});

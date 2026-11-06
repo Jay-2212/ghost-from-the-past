@@ -1,0 +1,189 @@
+I'll conduct a pre-release audit of the Ghost from the Past codebase, reviewing the areas you specified in order. Let me start by examining the files systematically.
+
+## 1. Extension Manifest Review
+[tool] Reading manifest.json:1
+[tool] status: Completed
+I see the manifest has BOTH `service_worker` and `scripts` in the background section. This is incorrect for MV3. Let me check if permissions are actually used:
+[tool] Searching for 'chrome\.storage' in extension
+[tool] Searching for 'chrome\.alarms' in extension
+[tool] status: Completed
+[tool] status: Completed
+Good, storage and alarms are used. Let me check content.js to confirm it checks blocklist/pause before extraction:
+[tool] Reading content.js:1
+[tool] status: Completed
+Good. Content.js checks `allowed()` which verifies pause and blocklist before extraction. Let me fix the manifest background issue:
+[tool] Editing manifest.json
+[tool] status: Completed
+## 2. Default Blocklist Review
+[tool] Reading blocklist.js:1
+[tool] status: Completed
+The blocklist looks comprehensive. I notice it already includes the Worker's own host check via `extraHosts` in content.js line 52. Let me verify content.js passes the workerUrl hostname:
+[tool] Searching for 'extra\.push|isBlocked' in extension
+[tool] status: Completed
+Good. The Worker's host is already excluded. The blocklist covers all required categories. No changes needed here.
+
+## 3. Secret Handling Review
+[tool] Searching for 'console\.' in extension
+[tool] status: Completed
+No console logging in user code. Let me check worker side for secret handling:
+[tool] Reading auth.ts:1
+[tool] status: Completed
+[tool] Searching for 'console\.' in src
+[tool] status: Completed
+The console logs are only for warnings/errors and don't include sensitive data. Now let me check the 500 error handler:
+[tool] Reading index.ts:81-110
+[tool] status: Completed
+The error handler includes `detail: (e as Error)?.message?.slice(0, 200)`. This could potentially leak sensitive information. Let me check if errors might contain secrets:
+[tool] Searching for 'throw new Error' in src
+[tool] status: Completed
+The error messages don't appear to leak secrets, but the general principle is that error detail exposure can be risky. However, given that all errors are specific operation errors and the secret handling is in auth.ts which returns false rather than throwing, I think it's acceptable. Let me verify query string handling:
+[tool] Searching for '\?.*secret|token=' in extension
+[tool] status: Completed
+Good, no query string secret sending from extension. Let me check the worker's token fallback:
+[tool] Searching for 'token=|searchParams' in src
+[tool] status: Completed
+[tool] Reading index.ts:1-50
+[tool] status: Completed
+Good. Token query param is only allowed for `/mcp`. Let me check that MCP actually passes `allowQuery: true`:
+[tool] Searching for 'await authorised|authorised\(' in src
+[tool] status: Completed
+Perfect. Token query param is only allowed for `/mcp` path. Secret handling looks good.
+
+## 4. Error States When Worker Unreachable
+[tool] Reading background.js:101-200
+[tool] status: Completed
+[tool] Reading background.js:201-250
+[tool] status: Completed
+Good error handling. Let me check for fetch timeout:
+[tool] Searching for 'AbortController|signal:|timeout' in extension
+[tool] status: Completed
+No timeout on fetch calls. This is a problem - they could hang indefinitely. Let me add fetch timeouts:
+[tool] Reading background.js:1
+[tool] status: Completed
+I need to add fetch timeouts. Let me create a helper function and add it to the fetch calls:
+[tool] Editing background.js
+[tool] status: Completed
+[tool] Editing background.js
+[tool] status: Completed
+[tool] Editing background.js
+[tool] status: Completed
+## 5. MCP Endpoint Auth & CORS
+[tool] Reading index.ts:41-140
+[tool] status: Completed
+The /health endpoint exposes only `ok`, `name`, `version`, and `configured` (boolean) - no sensitive data. Auth is correct: every protected path requires authorization. CORS is `*` with no credentials mode. Let me verify the MCP handler itself:
+[tool] Reading mcp.ts:1-50
+[tool] status: Completed
+MCP handler looks fine. The auth check happens in index.ts before calling handleMcp. Let me check CORS credentials:
+[tool] Searching for 'credentials|access-control-allow-credentials' in src
+[tool] status: Completed
+Good. No credentials mode. MCP auth looks correct.
+
+## 6. Fresh Chrome Profile: onInstalled Flow
+
+The onInstalled flow looks correct in background.js. Let me check if service worker restart would lose state:
+[tool] Searching for '^(let|var|const) [a-z]' in extension
+[tool] status: Completed
+Let me see all module-level variables:
+[tool] Reading background.js:1-20
+[tool] status: Completed
+[tool] Searching for '^let (lock|syncing)' in extension
+[tool] status: Completed
+`lock` and `syncing` are reset to safe defaults on restart. The lock is a Promise that gets chained, and syncing is cleared after each sync. This is fine for a service worker restart.
+
+## 7. Known Extractor Gaps
+
+Now let me fix the two extractor gaps:
+
+### 7a. GitHub Extractor
+[tool] Reading github.js:1
+[tool] status: Completed
+The GitHub extractor tries several selectors then falls back to `h.metaContent(doc, 'description')`. Let me check what that helper does and improve the fallback chain:
+[tool] Searching for 'metaContent.*function|metaContent:' in lib
+[tool] status: Completed
+[tool] Reading pipeline.js:61-110
+[tool] status: Completed
+[tool] Searching for 'function metaContent' in lib
+[tool] status: Completed
+[tool] Reading pipeline.js:44-53
+[tool] status: Completed
+Good. `metaContent` checks og:description and meta description. Now I need to improve the GitHub extractor to:
+1. Try og:description before meta description
+2. Strip GitHub's boilerplate prefixes/suffixes
+[tool] Editing github.js
+[tool] status: Completed
+### 7b. News Extractor - Reject Section Pages
+[tool] Reading news.js:1
+[tool] status: Completed
+The news extractor's match() needs to reject section/index pages. A section page would have JSON-LD types like `CollectionPage`, `WebPage`, or `ItemList`, not article types. For BBC-style section paths, I need to check the URL pattern. Let me improve the match function:
+[tool] Editing news.js
+[tool] status: Completed
+Now let me add unit tests for both fixes. First, let me check the existing test structure:
+[tool] status: Failed
+[tool] Finding extension/test/*.js
+[tool] status: Completed
+[tool] Reading listing extension
+[tool] status: Completed
+[tool] Reading pipeline.test.mjs:1-80
+[tool] status: Completed
+Good. Now let me add tests for the GitHub and news extractor fixes. I'll add them to the pipeline test file:
+[tool] Reading pipeline.test.mjs:1
+[tool] status: Completed
+Now I'll add tests for the two fixes at the end of the file:
+[tool] Editing pipeline.test.mjs
+[tool] status: Completed
+Now let's run the tests to see if they pass:
+[tool] Running: cd extension && npm test
+[tool] status: Completed
+Excellent! All 29 tests pass. Now let's run the worker tests:
+[tool] Running: cd worker && npm test
+[tool] status: Completed
+Perfect! All worker tests pass too. Now let me create a summary of all findings and changes.
+
+## Summary of Pre-Release Audit
+
+Let me document each finding:
+[tool] Creating AUDIT_S8.md
+[tool] status: Completed
+Perfect! Now let me provide a concise summary:
+
+---
+
+## Pre-Release Audit Complete
+
+I reviewed the Ghost from the Past codebase and **fixed 4 real problems**:
+
+### Fixed Issues
+
+1. **Manifest MV3 warning** (extension/manifest.json): Removed `background.scripts` array; Chrome MV3 only needs `service_worker`.
+
+2. **Missing fetch timeout** (extension/background.js): Added `fetchWithTimeout()` helper with 30s timeout using AbortController. Applied to 3 fetch calls (sync, health check, stats check). Previously these could hang indefinitely.
+
+3. **GitHub extractor gap** (extension/lib/extractors/github.js): 
+   - Added `og:description` fallback before `meta description`
+   - Strip GitHub boilerplate: "GitHub - owner/repo: " prefix, " - owner/repo" suffix, "Contribute to X development" text
+   - Test added: `github: og:description fallback with boilerplate stripping`
+
+4. **News extractor gap** (extension/lib/extractors/news.js):
+   - Reject section/index pages (BBC-style `/news/world`, generic `/news/business`)
+   - Require headline/name in NewsArticle JSON-LD
+   - Reject pages with ONLY CollectionPage/WebPage/ItemList types
+   - Test added: `news: section pages rejected, real articles matched`
+
+### Verified Correct (No Changes)
+
+- **Permissions**: All 3 are used (storage, alarms, host permissions)
+- **Content script**: Checks blocklist/pause BEFORE extraction ✓
+- **Blocklist**: Comprehensive coverage (banking, email, password managers, health, gov/tax, auth, Worker's own host) ✓
+- **Secret handling**: Never logged, never in query strings, constant-time compare, chrome.storage.local only ✓
+- **Error states**: Queue preserved, distinct error messages, alarm retries, now with timeout ✓
+- **MCP auth**: All endpoints protected, token query param only on /mcp, 401 has no data, CORS correct ✓
+- **Fresh profile flow**: Secret generated once under lock, alarm persists across SW restarts ✓
+
+### Test Results
+- **Extension**: 29/29 tests pass (including 2 new tests)
+- **Worker**: 37/37 tests pass
+
+Full audit report: `AUDIT_S8.md`
+
+Ready for Jay's UAT. No deployment or git operations performed.
+EXIT 0

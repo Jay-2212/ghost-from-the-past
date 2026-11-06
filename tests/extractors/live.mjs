@@ -33,7 +33,8 @@ const TEST_CASES = [
   { name: 'wikipedia', url: 'https://en.wikipedia.org/wiki/Ghost', kind: 'wikipedia-article', keyFields: ['title'] },
   { name: 'stackoverflow', url: 'https://stackoverflow.com/questions/11227809/why-is-processing-a-sorted-array-faster-than-processing-an-unsorted-array', kind: 'stackoverflow-question', keyFields: ['question'] },
   { name: 'amazon-product', url: 'https://www.amazon.in/dp/B08N5WRWNW', kind: 'product', keyFields: ['name', 'price'] },
-  { name: 'news', url: 'https://www.bbc.com/news/world', kind: 'news-article', keyFields: ['headline'] },
+  { name: 'news', url: 'https://www.bbc.com/news/articles/cmn04705rd8jo', kind: 'news-article', keyFields: ['published', 'title'] },
+  { name: 'news-section', url: 'https://www.bbc.com/news/world', kind: 'article', keyFields: ['title'] },
   { name: 'mdn-docs', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API', kind: 'docs-page', keyFields: ['title'] },
 ];
 
@@ -136,6 +137,7 @@ async function testExtractor(browser, testCase) {
     for (const field of keyFields) {
       if (result.meta?.[field]) foundFields[field] = true;
       else if (field === 'title' && result.title) foundFields[field] = true;
+      else if (field === 'published' && result.meta?.published) foundFields[field] = true;
       else if (field === 'question' && result.markdown.includes('?')) foundFields[field] = true;
     }
     

@@ -32,14 +32,26 @@
         });
         return { kind: isPr ? 'github-pr' : 'github-issue', title: title + ' · ' + repo + '#' + p[3], markdown: lines.join('\n'), meta: { repo: repo, state: state || undefined, author: authors[0] || undefined } };
       }
-      var about = h.txt(h.first(doc, ['.BorderGrid-cell p.f4', '[data-testid="repo-description"]', 'p.f4.my-3'])) || h.metaContent(doc, 'description');
+      var about = h.txt(h.first(doc, ['.BorderGrid-cell p.f4', '[data-testid="repo-description"]', 'p.f4.my-3'])) 
+        || h.metaContent(doc, 'og:description') 
+        || h.metaContent(doc, 'description');
+      // Strip GitHub's boilerplate prefixes/suffixes
+      if (about) {
+        about = about.replace(/^GitHub - [^:]+:\s*/, ''); // "GitHub - owner/repo: description"
+        about = about.replace(/\s+-\s+[\w.-]+\/[\w.-]+$/, ''); // " - owner/repo" suffix (only owner/repo tokens)
+        about = about.replace(/\.\s*Contribute to .+ development by creating an account on GitHub\.\s*$/, ''); // boilerplate suffix
+        // Also match boilerplate that doesn't have the leading ". "
+        if (/^Contribute to .+ development by creating an account on GitHub\.?\s*$/.test(about)) about = '';
+        // Trim and treat empty as undefined
+        about = about.trim() || undefined;
+      }
       var topics = h.$$(doc, 'a.topic-tag, [data-octo-click="topic_click"]').map(h.txt).filter(Boolean).slice(0, 15);
       var stars = h.txt(h.first(doc, ['#repo-stars-counter-star', '.js-social-count', 'a[href$="/stargazers"] strong']));
       var readme = h.first(doc, ['article.markdown-body', '#readme article', '[data-testid="readme"] .markdown-body', '.markdown-body']);
       var lines = ['**' + repo + '**' + (stars ? ' · ★ ' + stars : ''), '', about || ''];
       if (topics.length) lines.push('', 'Topics: ' + topics.join(', '));
       if (readme) lines.push('', '## README', '', h.cap(h.md(readme), 60000));
-      return { kind: 'github-repo', title: repo + (about ? ': ' + h.cap(about, 100) : ''), markdown: lines.join('\n'), excerpt: about, meta: { repo: repo, stars: stars || undefined, topics: topics.join(', ') || undefined } };
+      return { kind: 'github-repo', title: repo + (about ? ': ' + h.cap(about, 100) : ''), markdown: lines.join('\n'), excerpt: about, meta: { repo: repo, stars: stars || undefined, topics: topics.join(', ') || undefined, description: about ? h.cap(about, 300) : undefined } };
     },
   });
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -9,7 +9,15 @@ const R = globalThis.GhostRedact;
 const ALARM = 'ghost-sync';
 const BATCH = 20;
 const STALE_MS = 24 * 3600 * 1000;
+const FETCH_TIMEOUT_MS = 30000;
 const VERSION = chrome.runtime.getManifest().version;
+
+// fetch with timeout
+function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
+}
 
 // ---------- tiny async mutex so concurrent messages never clobber the queue ----------
 let lock = Promise.resolve();
@@ -186,7 +194,7 @@ async function doSync() {
   for (let i = 0; i < ready.length; i += BATCH) {
     const batch = ready.slice(i, i + BATCH);
     try {
-      const res = await fetch(`${s.workerUrl}/ingest`, {
+      const res = await fetchWithTimeout(`${s.workerUrl}/ingest`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${s.secret}` },
         body: JSON.stringify({
@@ -242,10 +250,10 @@ async function testConnection(workerUrl, secret) {
   const url = normaliseWorkerUrl(workerUrl);
   if (!url || !isAcceptableWorkerUrl(url)) return { ok: false, error: 'Use the https:// address of your Worker.' };
   try {
-    const h = await fetch(`${url}/health`).then(r => r.json());
+    const h = await fetchWithTimeout(`${url}/health`).then(r => r.json());
     if (!h || h.name !== 'ghost-from-the-past') return { ok: false, error: 'That address is not a Ghost from the Past Worker.' };
     if (h.configured === false) return { ok: false, error: 'The Worker has no GHOST_SECRET yet. Add it in Cloudflare (Settings → Variables and Secrets).' };
-    const r = await fetch(`${url}/api/stats`, { headers: { authorization: `Bearer ${secret}` } });
+    const r = await fetchWithTimeout(`${url}/api/stats`, { headers: { authorization: `Bearer ${secret}` } });
     if (r.status === 401) return { ok: false, error: 'The Worker is alive, but the secret does not match.' };
     if (!r.ok) return { ok: false, error: `Worker answered ${r.status}.` };
     const data = await r.json();

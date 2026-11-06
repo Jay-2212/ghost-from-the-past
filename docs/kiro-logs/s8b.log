@@ -1,0 +1,132 @@
+I'll work through these targeted fixes systematically.
+[tool] Reading github.js:1
+[tool] Reading pipeline.test.mjs:1
+[tool] status: Completed
+[tool] status: Completed
+[tool] Reading live.mjs:1
+[tool] status: Completed
+[tool] Reading index.ts:1
+[tool] status: Completed
+Now I'll make the fixes:
+[tool] Editing github.js
+[tool] status: Completed
+[tool] Editing github.js
+[tool] status: Completed
+[tool] Editing pipeline.test.mjs
+[tool] status: Completed
+[tool] Editing live.mjs
+[tool] status: Completed
+[tool] Editing live.mjs
+[tool] status: Completed
+[tool] Editing index.ts
+[tool] status: Completed
+Now let me check if there are any worker tests that assert on the detail field:
+[tool] Searching for 'detail' in worker
+[tool] status: Completed
+Good, no worker tests assert on the detail field. Now let's run the extension tests:
+[tool] Running: cd extension && npm test
+[tool] status: Completed
+I see the issue - the r2 and r3 tests are failing because `meta` might be undefined. Let me check if there's an issue with the extractor logic:
+[tool] Reading github.js:31-45
+[tool] status: Completed
+I see - when `about` becomes an empty string after stripping boilerplate, we should treat it as undefined/falsy. The issue is that after the boilerplate check, `about` might be an empty string `''`, but we're still passing it to the meta object. Let me fix this:
+[tool] Editing github.js
+[tool] status: Completed
+Now let's run the extension tests again:
+[tool] Running: cd extension && npm test
+[tool] status: Completed
+The error is still on line 192. Let me look at the test more carefully:
+[tool] Reading pipeline.test.mjs:168-197
+[tool] status: Completed
+I see the issue - in r2 and r3, `meta` itself might be undefined. Let me check the helper that's running these tests and add proper null checking in the test:
+[tool] Editing pipeline.test.mjs
+[tool] status: Completed
+[tool] Running: cd extension && npm test 2>&1 | tail -20
+[tool] status: Completed
+Still failing. Let me see the full test output:
+[tool] Running: cd extension && npm test 2>&1 | grep -A 15 "github: og:description"
+[tool] status: Completed
+So the issue is that `r2.meta.description` is undefined when it shouldn't be. The problem is that the HTML doesn't have any README or body content beyond the meta tag. Let me look at what the extractor returns when there's only a meta tag and no other content:
+[tool] Reading github.js:34-48
+[tool] status: Completed
+I see the problem - in the test case for r2, the og:description has ` - user/repo` at the end which my regex `/\s+-\s+[\w.-]+\/[\w.-]+$/` should remove. But after removing that, there's still text left. Let me trace through what should happen:
+
+1. Input: `"GitHub - user/repo: This is a real - description with dashes/slashes - user/repo"`
+2. After first replace: `"This is a real - description with dashes/slashes - user/repo"`
+3. After second replace (my new regex): `"This is a real - description with dashes/slashes"` ✓
+
+That should work. But wait - the test is checking `r2.meta?.description` which suggests `meta` might be undefined. Let me check what the return statement looks like again:
+[tool] Reading github.js:48-52
+[tool] status: Completed
+[tool] Reading github.js:53-55
+[tool] status: Completed
+Ah, I see - the `meta` object has `description: about ? h.cap(about, 300) : undefined`. So if `about` is undefined (after being set to empty string and trimmed), the description will be undefined.
+
+The issue is that after all the replacements, if the result becomes empty, it's set to undefined. But in the r2 test case, after stripping, there should still be content left. Let me trace through more carefully with the actual test input:
+
+Input: `"GitHub - user/repo: This is a real - description with dashes/slashes - user/repo"`
+
+Step 1 - Remove prefix: `/^GitHub - [^:]+:\s*/`
+Result: `"This is a real - description with dashes/slashes - user/repo"`
+
+Step 2 - Remove suffix: `/\s+-\s+[\w.-]+\/[\w.-]+$/`
+This should match ` - user/repo` at the end.
+Result: `"This is a real - description with dashes/slashes"`
+
+This should work! Let me actually test this regex in isolation to make sure it works:
+[tool] Running: node -e " const about = 'This is a real - description with dashes/slashes - user/repo'; const result = about.replace(/\s+-\s+[\w.-]+\/[\w.-]+$/, ''); console.log('Input:', about); console....
+[tool] status: Completed
+Good, the regex works. But wait - looking more carefully at the test HTML, I notice that in html2, there's only an og:description meta tag and NO description meta tag. And there's NO DOM description element. So the extractor should find the og:description. Let me check if there's a problem with finding the readme element:
+[tool] Running: cd extension && node -e " const html2 = \`<html><head> <meta property='og:description' content='GitHub - user/repo: This is a real - description with dashes/slashes - user/repo'> </head><b...
+[tool] status: Completed
+Perfect! The string processing works. So the issue must be that the HTML in the test has a `<article class="markdown-body">` which will be found as a README! Let me check if that's causing the extraction to skip the about or process it differently:
+[tool] Reading github.js:49-53
+[tool] status: Completed
+I see - `readme` is found via `.markdown-body` which exists in the test HTML! This might be interfering. Let me actually run the test with the real pipeline to see what's happening:
+[tool] Running: cd extension && node --test --test-name-pattern="og:description" test/pipeline.test.mjs 2>&1
+[tool] status: Completed
+Let me add some logging to debug what's happening:
+[tool] Running: cd extension && cat > /tmp/test-github.mjs << 'EOF' import h from './test/helpers.cjs'; const { run } = h; const html2 = `<html><head> <meta property="og:description" content="GitHub - use...
+[tool] status: Completed
+[tool] Running: cd extension && cat > test-github-debug.mjs << 'EOF' import h from './test/helpers.cjs'; const { run } = h; const html2 = `<html><head> <meta property="og:description" content="GitHub - us...
+[tool] status: Completed
+Aha! The entire result is undefined! That means the extractor isn't matching or is returning undefined. Let me check if there's a skip condition or something:
+[tool] Running: cd extension && cat > test-github-debug.mjs << 'EOF' import h from './test/helpers.cjs'; const { run } = h; const html2 = `<html><head> <meta property="og:description" content="GitHub - us...
+[tool] status: Completed
+Aha! The page is being marked as "too-short" by the generic extractor! The problem is that the test HTML has very little content. The `<article class="markdown-body"><h1>x</h1></article>` results in just "x" which is too short.
+
+The issue is that I need to add more content to the test HTML so it's not skipped. Let me update the test:
+[tool] Editing pipeline.test.mjs
+[tool] status: Completed
+[tool] Running: cd extension && rm -f test-github-debug.mjs && npm test 2>&1 | tail -20
+[tool] status: Completed
+Excellent! All extension tests pass. Now let's run the worker tests:
+[tool] Running: cd worker && npx vitest run
+[tool] status: Completed
+Perfect! All tests pass. Let me create a summary of the edits:
+
+## Summary of Edits
+
+All fixes applied successfully. Both extension tests (29 passed) and worker tests (37 passed) are passing.
+
+### Files Modified:
+
+1. **extension/lib/extractors/github.js**
+   - Added `description` field to meta object (capped to 300 chars)
+   - Tightened suffix regex from `/\s*-\s+[^\/]+\/[^\s]+$/` to `/\s+-\s+[\w.-]+\/[\w.-]+$/` to only match owner/repo tokens
+   - Extended boilerplate detection to catch standalone "Contribute to..." text without leading ". "
+   - Added trim and empty-to-undefined conversion after boilerplate stripping
+
+2. **extension/test/pipeline.test.mjs**
+   - Extended github test to verify meta.description is present and capped to 300 chars
+   - Added test case for suffix regex (description with internal " - " and slashes preserved)
+   - Added test case for boilerplate-only description (should be undefined)
+   - Added lorem() content to test HTML to prevent too-short skip
+
+3. **tests/extractors/live.mjs**
+   - Replaced single news case with two: real article (news-article kind) and section page (article kind)
+   - Updated keyFields pass logic to handle `published` field check
+
+4. **worker/src/index.ts**
+   - Removed `detail` field from 500 error response (kept console.error log)
+EXIT 0

@@ -91,7 +91,7 @@ export default {
     } catch (e) {
       // Never log secrets or page content; message only.
       console.error('ghost error', (e as Error)?.message);
-      return withCors(json({ error: 'internal error', detail: (e as Error)?.message?.slice(0, 200) }, 500));
+      return withCors(json({ error: 'internal error' }, 500));
     }
   },
 } satisfies ExportedHandler<Env>;
