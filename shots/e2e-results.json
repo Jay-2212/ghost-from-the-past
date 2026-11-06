@@ -1,6 +1,6 @@
 {
-  "base": "http://127.0.0.1:8787",
-  "at": "2026-11-06T02:32:06.583Z",
+  "base": "https://ghost-from-the-past-test.jb-brain.workers.dev",
+  "at": "2026-11-06T03:08:43.099Z",
   "results": [
     {
       "name": "extension service worker loads",
@@ -18,29 +18,19 @@
       "detail": ""
     },
     {
-      "name": "worker starts (wrangler dev, local D1)",
-      "ok": true,
-      "detail": ""
-    },
-    {
-      "name": "landing page hands the Worker URL to the extension",
-      "ok": true,
-      "detail": "sent"
-    },
-    {
-      "name": "onboarding asks to confirm the offered Worker",
+      "name": "remote worker reachable",
       "ok": true,
       "detail": ""
     },
     {
       "name": "connection test passes -> \"All done! I'll be watching you.\"",
       "ok": true,
-      "detail": "Connected to http://127.0.0.1:8787 · 0 page(s) remembered so far."
+      "detail": "Connected to https://ghost-from-the-past-test.jb-brain.workers.dev · 3 page(s) remembered so far."
     },
     {
       "name": "options: test connection",
       "ok": true,
-      "detail": "Connected · 0 page(s) remembered"
+      "detail": "Connected · 3 page(s) remembered"
     },
     {
       "name": "pages captured into the local queue",
@@ -75,7 +65,7 @@
     {
       "name": "search_memory with domain filter finds MDN",
       "ok": true,
-      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (0s, docs-page)"
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (29s, docs-page)"
     },
     {
       "name": "list_pages for today",
@@ -85,7 +75,7 @@
     {
       "name": "get_page returns full markdown",
       "ok": true,
-      "detail": "94725 chars"
+      "detail": "94876 chars"
     },
     {
       "name": "forget refuses without confirm",
@@ -98,6 +88,16 @@
       "detail": "{\"deleted\":1}"
     },
     {
+      "name": "forget no longer accepts bulk domain deletes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "search results are framed as untrusted content",
+      "ok": true,
+      "detail": ""
+    },
+    {
       "name": "forgotten page is gone",
       "ok": true,
       "detail": ""
@@ -106,6 +106,31 @@
       "name": "MCP without the secret is rejected (401)",
       "ok": true,
       "detail": ""
+    },
+    {
+      "name": "?token= on /mcp is off by default (401)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "/api/verify proves the Worker knows the secret (origin-bound HMAC)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "/api/verify rejects a malformed nonce (400)",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "CORS only on /mcp, not on /api/stats",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a fake Worker that cannot prove the secret is refused and never sees it",
+      "ok": true,
+      "detail": "That Worker could not prove it knows your secret, so the secret was not sent. Check the address, or paste the secret you set on the Worker."
     }
   ]
 }

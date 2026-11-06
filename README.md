@@ -59,7 +59,9 @@ Searchable by any AI assistant that supports MCP — Claude Desktop, Claude Code
 - **`search_memory`**: semantic + keyword search with filters (date range, domain, page kind), returns ranked results with snippets, URLs, titles, reading time.
 - **`list_pages`**: list pages by date/domain/kind, newest first.
 - **`get_page`**: full markdown by URL or ID.
-- **`forget`**: delete pages by URL, domain, or date range (requires `confirm: true`).
+- **`forget`**: permanently delete specific pages by exact `ids` (up to 50) or exact `url`, with `confirm: true`. To forget a whole site or day, ask your AI to `list_pages` with that domain/date first and pass the ids. There is deliberately no bulk "forget everything from X" call, so text inside a remembered page can't talk an AI into wiping your memory.
+
+Page text returned by `search_memory` and `get_page` is marked as untrusted third-party content (a notice line plus `untrusted: true`), and the server instructions tell the AI never to follow instructions found inside it.
 - **`memory_stats`**: page count, chunk count, total reading time, top domains and kinds.
 
 ---
@@ -70,20 +72,25 @@ Ghost is built privacy-first:
 
 - **No central server.** Everything runs in your Cloudflare Workers account. We never see your data.
 - **Incognito is never captured.** Private browsing stays private. The extension refuses to run in incognito mode.
-- **Secret never leaves your machine/Worker.** Your `GHOST_SECRET` is generated in the browser, pasted into your Worker, and used only for authentication. No third-party ever sees it.
+- **Secret never leaves your machine/Worker.** Your `GHOST_SECRET` is generated in the browser, pasted into your Worker, and used only for authentication. Before the extension sends it anywhere, the Worker must prove it already knows it (an HMAC of a random nonce, bound to the Worker's own address), so a look-alike page or a fake Worker can't collect it.
+- **Where the secret is stored.** The extension keeps it in `chrome.storage.local`, in plain text. Anything with access to your browser profile on disk can read it; Ghost is an unpacked personal tool and can't meaningfully protect it from that. The Options and setup pages mask it until you press Show. To rotate it: put a new value in the Worker (`npx wrangler secret put GHOST_SECRET` or the dashboard), then paste the same value into Options → Secret and press Save.
 - **Default blocklisting**: sites that should never be captured are blocked by default:
   - **Browser pages and private network**: chrome://, localhost, private IPs, single-label intranet names.
   - **Sign-in/accounts/one-time codes**: login pages, OAuth flows, password resets, account settings, auth paths.
   - **Email and private messages**: webmail, WhatsApp, Telegram, Discord, Slack, Teams, Messenger, DMs.
-  - **Password managers**: 1Password, Bitwarden, LastPass, Dashlane, etc.
+  - **Private documents, workspaces and AI chats**: Google Docs/Drive/Calendar/Keep/Photos, OneDrive/SharePoint/Office, Dropbox, Box, Notion, Slack workspaces, Atlassian (Jira/Confluence), ChatGPT, Claude, Gemini.
+  - **Password managers**: 1Password, Bitwarden, LastPass, Dashlane, RoboForm, Enpass, any `vault.*` host, etc.
   - **Banking/UPI/payments/investing/crypto**: banks, payment processors, UPI apps, checkout/payment paths, trading platforms, exchanges.
   - **Health portals**: patient portals, telemedicine sites, health records.
   - **Government/tax/ID**: UIDAI, income tax, DigiLocker, passport, PF, GST, IRS, SSA, etc.
   
-  The blocklist is editable in Options with **"Reset to defaults"** to restore it.
+  Rules are checked against both the page's real address and its canonical address, and path rules also apply to hash-routed apps (`/#/login`, `#!/checkout`). Nothing is captured until the extension is connected to your Worker.
+
+  The blocklist is editable in Options with **"Reset to defaults"** to restore it. Capture is automatic on every other site (that's the product); if you want less, add patterns or use the popup's "Don't remember this site".
 - **"Don't remember this site"**: a button in the toolbar popup blocks the current domain forever (shows "Won't remember \<site\>" with Undo for 5 seconds).
-- **Redaction by default**: card numbers, API keys/tokens/private keys, SSN-like and Aadhaar-like IDs are stripped from captured content before upload. Email addresses are hidden by default and switchable in Options.
-- **You can forget.** The `forget` tool in MCP can delete pages, entire domains, or date ranges.
+- **Redaction by default**: card numbers, API keys/tokens/private keys (OpenAI, Anthropic, Stripe, GitHub, GitLab, AWS, Slack, Google, Hugging Face, npm, SendGrid, DigitalOcean, Shopify, Azure, Slack/Discord webhooks, JWTs), SSN-like, Aadhaar-like and PAN IDs are stripped from captured content, including nested metadata, before upload. Phone numbers and street addresses are not redacted (too many false positives in normal articles). Email addresses are hidden by default and switchable in Options.
+- **You can forget.** The `forget` tool in MCP deletes the exact pages you name (by id or URL).
+- **Worker hardening**: CORS is only sent on `/mcp` and `/health` (the extension doesn't need it), and an optional Workers rate limit (300 requests/minute per route and IP, `ratelimits` in `wrangler.jsonc`) caps abuse if a secret ever leaks.
 - **You can delete everything.** Delete the Worker, the D1 database, and the Vectorize index. The ghost vanishes.
 
 ---
@@ -206,7 +213,7 @@ Edit `~/.kiro/settings/mcp.json` (or `.kiro/settings/mcp.json` in a workspace):
 
 ### Fallback: Token in Query String
 
-If your MCP client doesn't support custom headers, append `?token=YOUR_SECRET` to the URL:
+This is **off by default**. A token in the URL can end up in Cloudflare's observability logs (enabled in `wrangler.jsonc`), browser history and client logs, so prefer the `Authorization` header. If your MCP client really can't send headers, set the Worker variable `ALLOW_QUERY_TOKEN` to `true` (Cloudflare dashboard → Settings → Variables, or `vars` in `wrangler.jsonc`; consider turning observability off too), then append `?token=YOUR_SECRET` to the URL:
 
 ```json
 {
@@ -306,7 +313,7 @@ cd extension
 npm test
 ```
 
-29 tests covering extraction pipeline, privacy/blocklist/redaction, and blocklist-undo. Uses jsdom for DOM mocking.
+36 tests covering extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking.
 
 ### End-to-End Tests (Playwright)
 
@@ -314,7 +321,7 @@ npm test
 node tests/e2e/run.mjs
 ```
 
-21 tests locally (19 against a deployed Worker):
+28 checks locally (26 against a deployed Worker):
 - Extension service worker loads.
 - Onboarding opens on install.
 - Secret generated.
@@ -333,7 +340,11 @@ node tests/e2e/run.mjs
 - `forget` refuses without confirm.
 - `forget` deletes a page.
 - Forgotten page is gone.
-- MCP without the secret is rejected (401).
+- `forget` refuses bulk domain deletes; search results are framed as untrusted content.
+- MCP without the secret is rejected (401); `?token=` is off by default (401).
+- `/api/verify` returns the origin-bound HMAC proof and rejects a malformed nonce.
+- CORS headers only on `/mcp`, not on `/api/stats`.
+- A fake Worker that answers `/health` but can't prove the secret is refused and never receives it.
 
 Test results in `shots/e2e-results.json`.
 
@@ -397,7 +408,10 @@ Based on `git log --oneline` and session logs in [`docs/kiro-logs/`](docs/kiro-l
 | `8829ca3` | **Kiro** | Popup forget-site undo test + toast styling, live extractor check (`tests/extractors/live.mjs`), S6b fix (4 pass, 4 blocked by sites, 2 extractor gaps), tasks.md ticked | S6, S6b |
 | `afa565b` | **Hark** | Screenshots: real `search_memory` result from deployed test Worker (rendered as cards), popup "Don't remember this site" toast | (after S6) |
 | `895d1c4` | **Hark** | S7 prompt: authorship facts for README table | (before S7) |
-| (this commit) | **Kiro** | README, THIRD_PARTY.md | S7 |
+| `6ab8bdd` | **Kiro** | README, THIRD_PARTY.md | S7, S7b |
+| `61ccca3` | **Kiro** | Pre-release audit: MV3 background, fetch timeouts, GitHub/news extractor fixes | S8, S8b |
+| (Kiro s9 commit) | **Kiro** | Security fixes from the Kiro/Grok/Gemini reviews: origin-bound HMAC proof before the secret is sent, `?token=` opt-in, exact-id `forget` + untrusted-content framing, real-URL + hash-route blocklist checks, CORS scope, YouTube caption URL check, no capture before connect, private-surface defaults, recursive meta redaction, rate-limit binding, masked secret in setup; unit tests | S9 |
+| (same commit, Hark) | **Hark** | Triage of every finding, S9 prompt, `ratelimits` config fix, README security/privacy text, new e2e checks, [docs/security-review.md](docs/security-review.md) | (after S9) |
 
 **Product owner (Jay)**: idea, name and requirements. `docs/BRIEF.md` was written down by Hark from those requirements.
 
@@ -423,6 +437,8 @@ Full Kiro session logs and prompts are in [`docs/kiro-logs/`](docs/kiro-logs/):
 - **[s5.log](docs/kiro-logs/s5.log)**, **[s5-prompt.md](docs/kiro-logs/s5-prompt.md)**, **[s5b.log](docs/kiro-logs/s5b.log)**, **[s5b-prompt.md](docs/kiro-logs/s5b-prompt.md)**: e2e sync-wait race fixed, popup improvements.
 - **[s6.log](docs/kiro-logs/s6.log)**, **[s6-prompt.md](docs/kiro-logs/s6-prompt.md)**, **[s6b.log](docs/kiro-logs/s6b.log)**, **[s6b-prompt.md](docs/kiro-logs/s6b-prompt.md)**: popup forget-site, live extractor check.
 - **[s7-prompt.md](docs/kiro-logs/s7-prompt.md)**, **[s7.log](docs/kiro-logs/s7.log)**: this README.
+- **[s8-prompt.md](docs/kiro-logs/s8-prompt.md)**, **[s8.log](docs/kiro-logs/s8.log)**, **[s8b-prompt.md](docs/kiro-logs/s8b-prompt.md)**, **[s8b.log](docs/kiro-logs/s8b.log)**: pre-release audit and fixes.
+- **[s9-prompt.md](docs/kiro-logs/s9-prompt.md)**, **[s9.log](docs/kiro-logs/s9.log)**: security fixes from the Kiro, Grok and Gemini reviews (see [docs/security-review.md](docs/security-review.md)).
 
 ---
 

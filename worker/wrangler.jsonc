@@ -24,6 +24,11 @@
     "binding": "AI"
   },
 
+  // Optional basic rate limit (Workers Rate Limiting binding), keyed per route + client IP in src/index.ts.
+  "ratelimits": [
+    { "name": "LIMITER", "namespace_id": "1001", "simple": { "limit": 300, "period": 60 } }
+  ],
+
   "vars": {
     "EMBED_MODEL": "@cf/baai/bge-small-en-v1.5",
     "MAX_CHUNKS_PER_PAGE": "8"

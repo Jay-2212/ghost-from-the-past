@@ -8,6 +8,8 @@ import { chromium } from 'playwright-core';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { spawn, execFileSync } from 'node:child_process';
+import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
 import { mkdirSync, writeFileSync, rmSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -87,8 +89,10 @@ async function main() {
     await ob.waitForSelector('#iam');
     await ob.screenshot({ path: join(SHOTS, 'onboarding-1-welcome.png') });
     await ob.click('#iam');
-    await ob.waitForFunction(() => document.getElementById("secretOut").textContent.length === 64, null, { timeout: 15000 });
-    const secret = REMOTE ? process.env.GHOST_SECRET : (await ob.textContent('#secretOut')).trim();
+    // the secret is shown masked (first4…last4) until "Show" is pressed
+    await ob.waitForFunction(() => /^[0-9a-f]{4}…[0-9a-f]{4}$/.test(document.getElementById('secretOut').textContent), null, { timeout: 15000 });
+    // the onboarding page masks the secret, so read the generated one from extension storage
+    const secret = REMOTE ? process.env.GHOST_SECRET : await sw.evaluate(() => chrome.storage.local.get('secret').then(r => r.secret));
     check('extension generated a 256-bit secret', /^[0-9a-f]{64}$/.test(secret || '') || !!REMOTE);
     await ob.screenshot({ path: join(SHOTS, 'onboarding-2-cloudflare.png') });
 
@@ -205,6 +209,9 @@ async function main() {
     check('forget refuses without confirm', f0.isError === true);
     const f1 = await client.callTool({ name: 'forget', arguments: { url: 'https://example.com/', confirm: true } });
     check('forget deletes a page', f1.structuredContent?.deleted === 1, JSON.stringify(f1.structuredContent));
+    const fd = await client.callTool({ name: 'forget', arguments: { domain: 'wikipedia.org', confirm: true } });
+    check('forget no longer accepts bulk domain deletes', fd.isError === true);
+    check('search results are framed as untrusted content', (s1.content?.[0]?.text || '').startsWith('Untrusted content') && s1.structuredContent?.untrusted === true);
     const gone = await client.callTool({ name: 'get_page', arguments: { url: 'https://example.com/' } });
     check('forgotten page is gone', gone.structuredContent?.found === false);
     const ms = await client.callTool({ name: 'memory_stats', arguments: {} });
@@ -215,6 +222,33 @@ async function main() {
     // 9. auth is enforced
     const noAuth = await fetch(`${BASE}/mcp`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
     check('MCP without the secret is rejected (401)', noAuth.status === 401);
+
+    // 10. security hardening (S9)
+    const qTok = await fetch(`${BASE}/mcp?token=${encodeURIComponent(secret)}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    check('?token= on /mcp is off by default (401)', qTok.status === 401);
+    const nonce = 'ab'.repeat(32);
+    const vr = await fetch(`${BASE}/api/verify`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nonce }) }).then(r => r.json());
+    const want = createHmac('sha256', secret).update(`ghost-verify:${new URL(BASE).origin}:${nonce}`).digest('hex');
+    check('/api/verify proves the Worker knows the secret (origin-bound HMAC)', vr.proof === want);
+    const vbad = await fetch(`${BASE}/api/verify`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ nonce: 'xyz' }) });
+    check('/api/verify rejects a malformed nonce (400)', vbad.status === 400);
+    const statsRes = await fetch(`${BASE}/api/stats`, { headers: { authorization: `Bearer ${secret}` } });
+    const pre = await fetch(`${BASE}/mcp`, { method: 'OPTIONS' });
+    check('CORS only on /mcp, not on /api/stats', !statsRes.headers.get('access-control-allow-origin') && pre.headers.get('access-control-allow-origin') === '*');
+
+    // a fake "Worker" that answers /health but cannot prove the secret must never receive it
+    let sawAuth = false;
+    const fake = createServer((req, res) => {
+      if (req.headers.authorization) sawAuth = true;
+      res.setHeader('content-type', 'application/json');
+      if (req.url.startsWith('/health')) return res.end(JSON.stringify({ ok: true, name: 'ghost-from-the-past', configured: true }));
+      if (req.url.startsWith('/api/verify')) return res.end(JSON.stringify({ ok: true, proof: '0'.repeat(64) }));
+      res.end(JSON.stringify({ ok: true, pages: 0 }));
+    });
+    await new Promise(r => fake.listen(8799, '127.0.0.1', r));
+    const fakeRes = await opt.evaluate(s => chrome.runtime.sendMessage({ type: 'ghost:test', workerUrl: 'http://127.0.0.1:8799', secret: s }), secret);
+    fake.close();
+    check('a fake Worker that cannot prove the secret is refused and never sees it', fakeRes && fakeRes.ok === false && !sawAuth, fakeRes && fakeRes.error);
   } finally {
     await ctx.close().catch(() => {});
     if (wrangler) wrangler.kill('SIGTERM');

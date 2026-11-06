@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-06T02:32:48.686Z",
+  "timestamp": "2026-11-06T03:10:10.137Z",
   "timeout_ms": 30000,
   "total": 11,
   "passed": 7,
@@ -87,7 +87,7 @@
       "url": "https://www.bbc.com/news/articles/cmn04705rd8jo",
       "status": "pass",
       "kind": "news-article",
-      "chars": 5929,
+      "chars": 5821,
       "keyFields": [
         "published",
         "title"
@@ -98,7 +98,7 @@
       "url": "https://www.bbc.com/news/world",
       "status": "pass",
       "kind": "article",
-      "chars": 7297,
+      "chars": 7268,
       "keyFields": [
         "title"
       ]
