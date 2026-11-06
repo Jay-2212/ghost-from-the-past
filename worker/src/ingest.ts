@@ -157,7 +157,15 @@ export async function ingestPages(env: Env, rawPages: unknown[]): Promise<Ingest
 
     if (existing.content_hash === hash) {
       await merge.run();
-      results.push({ url, id, status: 'merged', chunks: 0 });
+      // A previous request may have inserted the page row and then failed before writing chunks;
+      // without this the page would never reach FTS/vector search.
+      const hasChunk = await env.DB.prepare('SELECT 1 AS one FROM chunks WHERE page_id = ? LIMIT 1').bind(id).first();
+      if (!hasChunk) {
+        const w = await writeChunks(env, id, title, markdown);
+        results.push({ url, id, status: 'merged', ...w });
+      } else {
+        results.push({ url, id, status: 'merged', chunks: 0 });
+      }
       continue;
     }
 

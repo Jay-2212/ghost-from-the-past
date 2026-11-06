@@ -44,11 +44,12 @@
   }
 
   function getSettings() {
-    return chrome.storage.local.get(['paused', 'blocklist', 'workerUrl', 'secret']);
+    // never read the secret here: the background script checks it before anything is stored or sent
+    return chrome.storage.local.get(['paused', 'blocklist', 'workerUrl']);
   }
   function allowed(s, url, href) {
     if (s.paused) return false;
-    if (!(s.workerUrl && s.secret)) return false;
+    if (!s.workerUrl) return false;
     var extra = [];
     try { if (s.workerUrl) extra.push(new URL(s.workerUrl).hostname); } catch (e) { /* ignore */ }
     var list = typeof s.blocklist === 'string' ? s.blocklist : GhostBlocklist.DEFAULT_BLOCKLIST;
@@ -125,6 +126,9 @@
     }
   }, 1000);
 
-  // test hook: lets the e2e test force an immediate capture + flush without waiting
-  window.addEventListener('ghost:test-capture', function () { state.bestLen = 0; capture(); flush(); });
+  // test hook: forces an immediate capture + flush (same privacy checks as a normal capture).
+  // Off in production; only registered when an extension page has set the test-only `testHooks` flag.
+  chrome.storage.local.get('testHooks').then(function (t) {
+    if (t && t.testHooks === true) window.addEventListener('ghost:test-capture', function () { state.bestLen = 0; capture(); flush(); });
+  }).catch(function () { /* ignore */ });
 })();

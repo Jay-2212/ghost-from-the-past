@@ -53,7 +53,7 @@
     /\bdop_v1_[a-f0-9]{64}\b/g,
     /\bshp(?:at|ss|ca|pa)_[a-fA-F0-9]{32}\b/g,
     /AccountKey=[A-Za-z0-9+\/=]{40,}/g,
-    /\b(?:api[_-]?key|secret|token|password|passwd|bearer)\s*[:=]\s*["']?[A-Za-z0-9_\-\/+=.]{16,}["']?/gi,
+    /(?:(?:\b|_)(?:api[_-]?key|secret|token|password|passwd|bearer)|_key)\s*[:=]\s*["']?[A-Za-z0-9_\-\/+=.]{16,}["']?/gi,
   ];
 
   function redactSecrets(text) {

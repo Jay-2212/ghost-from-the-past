@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Meet your ghost · Ghost from the Past</title><link rel="stylesheet" href="ui.css"><link rel="stylesheet" href="onboarding.css"></head>
 <body>
   <main class="stage">
-    <ol class="dots" aria-label="Setup progress"><li data-step="1" aria-current="step"></li><li data-step="2"></li><li data-step="3"></li></ol>
+    <ol class="dots" aria-label="Setup progress"><li data-step="1" aria-current="step"><span class="visually-hidden">Step 1 of 3</span></li><li data-step="2"><span class="visually-hidden">Step 2 of 3</span></li><li data-step="3"><span class="visually-hidden">Step 3 of 3</span></li></ol>
 
     <section class="screen card" id="s1" aria-labelledby="t1">
       <img class="ghost float" src="icons/ghost.svg" alt="">
@@ -23,7 +23,7 @@
       <button class="btn solid big" id="deploy">Deploy to Cloudflare</button>
       <p class="toast" id="deployToast" role="status" aria-live="polite"></p>
 
-      <div class="card offer stack" id="offer" hidden role="alertdialog" aria-labelledby="offerTitle">
+      <div class="card offer stack" id="offer" hidden role="alertdialog" aria-modal="true" aria-labelledby="offerTitle">
         <h2 id="offerTitle">Connect to this ghost?</h2>
         <p class="mono" id="offerUrl"></p>
         <p class="hint">Only continue if you just deployed this Worker yourself. Ghost will check that it knows your secret before sending anything.</p>

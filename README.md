@@ -4,6 +4,8 @@
 
 **A ghost from your past that remembers every page you've read.**
 
+**Demo video (under 3 min):** https://youtu.be/3SesyYAMOOo · **Devpost:** https://devpost.com/software/ghost-from-the-past
+
 A personal, privacy-first browser memory for knowledge workers, researchers, and curious readers. Ghost quietly captures and makes searchable every web article you read, storing it in your own Cloudflare account. No central server. No tracking. No data leaves your infrastructure.
 
 ---
@@ -100,6 +102,8 @@ Ghost is built privacy-first:
 1. Download `ghost-from-the-past-extension-v1.0.0.zip` from the [v1.0.0 release](https://github.com/Jay-2212/ghost-from-the-past/releases/tag/v1.0.0) (the same file is in the repo at `release/`) and unzip it.
 2. In Chrome, open `chrome://extensions`, turn on **Developer mode** (top right), click **Load unpacked** and pick the unzipped folder.
 3. To test without a Cloudflare account, skip the Deploy step: in the onboarding tab's paste fields (or Options), enter the test Worker URL and secret given privately in the Devpost testing-instructions field, then press **Test connection**.
+
+Use a fresh Chrome profile for this, because the test Worker is shared and every page you read while connected is sent to it. When you are done, pause the extension (popup or Options) or remove it.
 
 To run your own Worker instead, follow the setup below.
 
@@ -219,6 +223,8 @@ Edit `~/.kiro/settings/mcp.json` (or `.kiro/settings/mcp.json` in a workspace):
 }
 ```
 
+This repo also ships [`.kiro/settings/mcp.json`](.kiro/settings/mcp.json), which registers your own Worker for Kiro sessions in this workspace. It reads the secret from the `GHOST_SECRET` environment variable (`Bearer ${GHOST_SECRET}`) and is `"disabled": true` until you replace `<your-worker>` with your Worker's address and remove that line.
+
 ### Fallback: Token in Query String
 
 This is **off by default**. A token in the URL can end up in Cloudflare's observability logs (enabled in `wrangler.jsonc`), browser history and client logs, so prefer the `Authorization` header. If your MCP client really can't send headers, set the Worker variable `ALLOW_QUERY_TOKEN` to `true` (Cloudflare dashboard → Settings → Variables, or `vars` in `wrangler.jsonc`; consider turning observability off too), then append `?token=YOUR_SECRET` to the URL:
@@ -268,6 +274,8 @@ Ghost is designed to fit within Cloudflare's free tier for personal use:
 Check [Cloudflare's current free tier limits](https://developers.cloudflare.com/workers/platform/pricing/) for exact numbers.
 
 By default the Worker stores vectors in D1 (D1VectorStore: JSON vectors, brute-force cosine search). It uses Vectorize only if you add a `VECTORS` binding (see the comment in `worker/wrangler.jsonc`) and don't set `VECTOR_MODE=d1`. D1 is slower than Vectorize at large scale, but needs no extra setup.
+
+D1-stored vectors are scanned in full on every semantic query, so switch to Vectorize beyond roughly 1,000-2,000 pages.
 
 ---
 
@@ -320,7 +328,7 @@ npm test
 npm run typecheck
 ```
 
-45 tests in 6 files: `auth.test.ts` (bearer compare, origin-bound proof, weak/placeholder secret rejection), `chunk.test.ts`, `embed.test.ts`, `search.test.ts`, `util.test.ts` and `schema.test.ts` (the `ensureSchema` fallback creates the tables only when they are missing).
+47 tests in 7 files: `auth.test.ts` (bearer compare, origin-bound proof, weak/placeholder secret rejection), `chunk.test.ts`, `embed.test.ts`, `search.test.ts`, `util.test.ts` `schema.test.ts` (the `ensureSchema` fallback creates the tables only when they are missing) and `ingest.test.ts` (a retried page whose chunks were never written gets them on the merge path).
 
 ### Extension Tests (Node.js `node:test`)
 
@@ -329,7 +337,7 @@ cd extension
 npm test
 ```
 
-36 tests covering extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking. `npm test` runs `node --test test/*.test.mjs`. From the repo root, `node --test extension/test` also works on Node 22: Node no longer expands a directory there, so it loads `extension/test/index.js`, which imports every `*.test.mjs`.
+38 tests covering extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking. `npm test` runs `node --test test/*.test.mjs`. From the repo root, `node --test extension/test` also works on Node 22: Node no longer expands a directory there, so it loads `extension/test/index.js`, which imports every `*.test.mjs`.
 
 ### End-to-End Tests (Playwright)
 
@@ -365,6 +373,17 @@ Runs the extraction pipeline on 11 real URLs. Latest run (`tests/extractors/out/
 ## How Kiro Built This
 
 Ghost was built with **Kiro CLI** for Kiroween 2026, in headless sessions (`kiro-cli chat --no-interactive`, see [`docs/kiro-logs/README.md`](docs/kiro-logs/README.md)). Kiro wrote the steering files and the spec (76 tasks, all ticked), the hooks and the `ghost` custom agent, and the Worker scaffold. From S5 to S11 it reviewed and fixed the code: the e2e race, popup and extractor fixes, the pre-release audit, the S9 security hardening and the S10 Deploy-button work. When Kiro credits ran out after S4, Hark (another AI agent) wrote most of the application code; the authorship table below says who did what.
+
+### Kiro Features Used
+
+| Feature | Files |
+|---------|-------|
+| Spec | [`.kiro/specs/ghost-from-the-past/`](.kiro/specs/ghost-from-the-past/) (`requirements.md`, `design.md`, `tasks.md`) |
+| Steering | [`.kiro/steering/`](.kiro/steering/) (`product.md`, `tech.md`, `design-language.md`) |
+| Hooks | [`.kiro/hooks/`](.kiro/hooks/) (`secret-guard.mjs`, `test-on-write.mjs`, `README.md`) |
+| Agent | [`.kiro/agents/ghost.json`](.kiro/agents/ghost.json) |
+| MCP | [`.kiro/settings/mcp.json`](.kiro/settings/mcp.json) (your own Ghost Worker as a remote MCP server) |
+| Logs | [`docs/kiro-logs/`](docs/kiro-logs/) (session prompts and logs) |
 
 ### Spec-Driven Development
 
@@ -422,8 +441,10 @@ Based on `git log --oneline` and session logs in [`docs/kiro-logs/`](docs/kiro-l
 | `035d8eb` | **Hark** | Triage of every finding, S9 prompt, `ratelimits` config fix, README security/privacy text, new e2e checks, [docs/security-review.md](docs/security-review.md) | (after S9) |
 | `e450e08` | **Kiro** | Deploy-to-Cloudflare readiness: blank required `GHOST_SECRET` field, Worker fails closed on weak/placeholder secrets, Vectorize optional (D1 vectors by default), migrations in the deploy script + `ensureSchema` fallback; tests | S10 |
 | `c739f84`, `614bad5` | **Hark** | S10 log; v1.0.0 release zip | (after S10) |
-| (uncommitted) | **Kiro** | `ghost` custom agent, Kiro CLI hook scripts (secret-guard rewrite, test-on-write), hooks README | S11a |
-| (uncommitted) | **Kiro** | Doc and repo fixes from the final audits: README deploy/test/Kiro sections, steering and design corrections, manifest cleanup, `extension/node_modules` untracked, logs README | S11b |
+| `703d62b` | **Kiro** | `ghost` custom agent, Kiro CLI hook scripts (secret-guard rewrite, test-on-write), hooks README | S11a |
+| `703d62b` | **Kiro** | Doc and repo fixes from the final audits: README deploy/test/Kiro sections, steering and design corrections, manifest cleanup, `extension/node_modules` untracked, logs README | S11b |
+| `703d62b` | **Kiro** | Firefox build: `scripts/build-firefox.mjs` (Firefox manifest in `dist/firefox/`, Firefox release zip), Chrome-only API audit ([s12.log](docs/kiro-logs/s12.log)) | S12 |
+| (this commit) | **Kiro** (claude-opus-5.5) + **Hark** | Production-readiness pass after a three-reviewer audit (Kiro, Grok, Antigravity): sync no longer wedges on 413 (batch 5, per-page retry), merge path rewrites missing chunks, `list_pages` marked untrusted, content script no longer reads the secret, test hook gated, `forget([])` guard, more default-blocked consoles and `AWS_SECRET_ACCESS_KEY=`-style redaction, a11y fixes, `.kiro/settings/mcp.json`; Hark: README/test-count updates and review | S13a, S13b |
 
 **Product owner (Jay)**: idea, name and requirements. `docs/BRIEF.md` was written down by Hark from those requirements.
 
@@ -454,6 +475,8 @@ Kiro session logs and prompts are in [`docs/kiro-logs/`](docs/kiro-logs/) ([how 
 - **[s10-prompt.md](docs/kiro-logs/s10-prompt.md)**, **[s10.log](docs/kiro-logs/s10.log)**: Deploy-to-Cloudflare button readiness.
 - **[s11a-prompt.md](docs/kiro-logs/s11a-prompt.md)**, **[s11a.log](docs/kiro-logs/s11a.log)**: the `ghost` custom agent and Kiro CLI hooks (cut off by a timeout; finished at the start of S11b).
 - **[s11b-prompt.md](docs/kiro-logs/s11b-prompt.md)**, **[s11c-prompt.md](docs/kiro-logs/s11c-prompt.md)**, **[s11b.log](docs/kiro-logs/s11b.log)**: S11a checks and the final-audit doc/repo fixes, run on the `ghost` agent ([audits](docs/reviews/)).
+- **[s12-prompt.md](docs/kiro-logs/s12-prompt.md)**, **[s12.log](docs/kiro-logs/s12.log)**: Firefox build (`scripts/build-firefox.mjs`).
+- **[s13a-prompt.md](docs/kiro-logs/s13a-prompt.md)**, **[s13a.log](docs/kiro-logs/s13a.log)**, **[s13b-prompt.md](docs/kiro-logs/s13b-prompt.md)**, **[s13b.log](docs/kiro-logs/s13b.log)**: production-readiness fixes from the three-reviewer audit.
 
 ---
 

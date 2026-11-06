@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ghost-from-the-past": {
+      "url": "https://<your-worker>.workers.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer ${GHOST_SECRET}"
+      },
+      "disabled": true
+    }
+  }
+}

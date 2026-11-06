@@ -7,7 +7,7 @@ import { getSettings, setSettings, generateSecret, isAcceptableWorkerUrl, normal
 const B = globalThis.GhostBlocklist;
 const R = globalThis.GhostRedact;
 const ALARM = 'ghost-sync';
-const BATCH = 20;
+const BATCH = 5;
 const STALE_MS = 24 * 3600 * 1000;
 const FETCH_TIMEOUT_MS = 30000;
 const VERSION = chrome.runtime.getManifest().version;
@@ -192,42 +192,69 @@ async function doSync() {
     return out;
   });
 
+  const post = pages => fetchWithTimeout(`${s.workerUrl}/ingest`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${s.secret}` },
+    body: JSON.stringify({
+      client: { name: 'ghost-extension', version: VERSION },
+      pages: pages.map(e => ({
+        url: e.url, title: e.title, domain: e.domain, kind: e.kind, meta: e.meta, markdown: e.markdown, excerpt: e.excerpt, lang: e.lang,
+        firstSeen: e.firstSeen, lastSeen: e.lastSeen, activeMsDelta: e.activeMsDelta || 0,
+      })),
+    }),
+  });
+  // remove what was sent (or dropped), but keep anything that arrived while the request was in flight
+  const settle = (pages, drop = false) => locked(async () => {
+    const q = await getQueue();
+    for (const e of pages) {
+      const cur = q[e.url];
+      if (!cur) continue;
+      if (drop || cur.rev === e.rev) delete q[e.url];
+      else {
+        cur.activeMsDelta = Math.max(0, (cur.activeMsDelta || 0) - (e.activeMsDelta || 0));
+        if (cur.markdown === e.markdown) cur.syncedOnce = true;
+      }
+    }
+    await chrome.storage.local.set({ queue: q });
+  });
+  const failMsg = res => (res.status === 401 ? 'The Worker rejected the secret (401).' : `Worker answered ${res.status}.`);
+
   let sent = 0;
   let error = null;
-  for (let i = 0; i < ready.length; i += BATCH) {
+  const sentUrls = new Set();
+  const failedUrls = new Set();
+  outer: for (let i = 0; i < ready.length; i += BATCH) {
     const batch = ready.slice(i, i + BATCH);
     try {
-      const res = await fetchWithTimeout(`${s.workerUrl}/ingest`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${s.secret}` },
-        body: JSON.stringify({
-          client: { name: 'ghost-extension', version: VERSION },
-          pages: batch.map(e => ({
-            url: e.url, title: e.title, domain: e.domain, kind: e.kind, meta: e.meta, markdown: e.markdown, excerpt: e.excerpt, lang: e.lang,
-            firstSeen: e.firstSeen, lastSeen: e.lastSeen, activeMsDelta: e.activeMsDelta || 0,
-          })),
-        }),
-      });
-      if (!res.ok) {
-        error = res.status === 401 ? 'The Worker rejected the secret (401).' : `Worker answered ${res.status}.`;
+      const res = await post(batch);
+      if (res.ok) {
+        await res.json().catch(() => ({}));
+        await settle(batch);
+        sent += batch.length;
+        batch.forEach(e => sentUrls.add(e.url));
+        continue;
+      }
+      if (res.status !== 413) {
+        error = failMsg(res);
         break;
       }
-      await res.json().catch(() => ({}));
-      sent += batch.length;
-      // remove what was sent, but keep anything that arrived while the request was in flight
-      await locked(async () => {
-        const q = await getQueue();
-        for (const e of batch) {
-          const cur = q[e.url];
-          if (!cur) continue;
-          if (cur.rev === e.rev) delete q[e.url];
-          else {
-            cur.activeMsDelta = Math.max(0, (cur.activeMsDelta || 0) - (e.activeMsDelta || 0));
-            if (cur.markdown === e.markdown) cur.syncedOnce = true;
-          }
+      // body too large: retry one page at a time; a page that is too large on its own is dropped as failed
+      for (const e of batch) {
+        const r = await post([e]);
+        if (r.status === 413) {
+          await settle([e], true);
+          failedUrls.add(e.url);
+          continue;
         }
-        await chrome.storage.local.set({ queue: q });
-      });
+        if (!r.ok) {
+          error = failMsg(r);
+          break outer;
+        }
+        await r.json().catch(() => ({}));
+        await settle([e]);
+        sent += 1;
+        sentUrls.add(e.url);
+      }
     } catch (err) {
       error = `Could not reach the Worker (${(err && err.message) || 'network error'}).`;
       break;
@@ -242,8 +269,9 @@ async function doSync() {
     st.lastError = null;
   } else st.lastError = error;
   st.totalSynced = (st0.totalSynced || 0) + sent;
-  const sentUrls = new Set(ready.slice(0, sent).map(e => e.url));
-  st.recent = (st.recent || []).map(r => (sentUrls.has(r.url) ? { ...r, synced: true } : r));
+  if (failedUrls.size) st.lastSkippedTooLarge = failedUrls.size;
+  st.recent = (st.recent || []).map(r =>
+    sentUrls.has(r.url) ? { ...r, synced: true } : failedUrls.has(r.url) ? { ...r, failed: 'too large' } : r);
   await chrome.storage.local.set({ stats: st });
   return error ? { ok: false, sent, error } : { ok: true, sent };
 }

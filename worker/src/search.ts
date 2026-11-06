@@ -189,9 +189,11 @@ export async function getPage(env: Env, args: { url?: string; id?: string }) {
 export async function forget(env: Env, args: { ids?: string[]; url?: string }) {
   let ids: string[] = [];
   if (args.ids) {
+    const want = [...new Set(args.ids)];
+    if (want.length === 0) return { deleted: 0 }; // never build `IN ()`
     // Verify that these ids exist in the database
-    const placeholders = args.ids.map(() => '?').join(',');
-    const r = await env.DB.prepare(`SELECT id FROM pages WHERE id IN (${placeholders})`).bind(...args.ids).all<{ id: string }>();
+    const placeholders = want.map(() => '?').join(',');
+    const r = await env.DB.prepare(`SELECT id FROM pages WHERE id IN (${placeholders})`).bind(...want).all<{ id: string }>();
     ids = (r.results ?? []).map(x => x.id);
   } else if (args.url) {
     const r = await env.DB.prepare('SELECT id FROM pages WHERE url = ? OR url = ?').bind(normaliseUrl(args.url), args.url).all<{ id: string }>();

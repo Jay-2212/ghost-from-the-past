@@ -1,0 +1,59 @@
+[tool] Running: git status --short | head; git log --oneline | head -8; cat package.json; grep -n "BATCH\|413\|MAX_BODY\|async function doSync" -n extension/background.js | head -30; grep -n "MAX_BODY" wo...
+[tool] status: Completed
+[tool] Reading background.js:161-250
+[tool] status: Completed
+[tool] Running: cat > /tmp/patch.py <<'EOF' p='extension/background.js' s=open(p).read() s=s.replace("const BATCH = 20;","const BATCH = 5;",1) start=s.index(" let sent = 0;\n let error = null;\n for (let ...
+[tool] status: Completed
+[tool] Running: grep -rn "dispatchEvent\|ghost:" tests/e2e/ | head; sed -n 40,135p extension/content.js; grep -n "secret\|workerUrl\|connected" extension/background.js | head -30
+[tool] status: Completed
+[tool] Running: cat > /tmp/p2.py <<'EOF' p='extension/content.js' s=open(p).read() s=s.replace(""" return chrome.storage.local.get(['paused', 'blocklist', 'workerUrl', 'secret']);""",""" // never read the...
+[tool] status: Completed
+[tool] Reading mcp.ts:31-105
+[tool] status: Completed
+[tool] Running: cat > /tmp/p3.py <<'EOF' p='worker/src/mcp.ts' s=open(p).read() old=""" return text(`${r.total} page(s).\\n\\n${lines.join('\\n') || 'Nothing remembered for that filter.'}`, r);""" assert ...
+[tool] status: Completed
+[tool] Running: cat > /tmp/p4.py <<'EOF' p='worker/src/search.ts' s=open(p).read() old=""" if (args.ids) { // Verify that these ids exist in the database const placeholders = args.ids.map(() => '?').join(...
+[tool] status: Completed
+[tool] Running: cat > /tmp/p5.py <<'EOF' p='extension/onboarding.html' s=open(p).read() for n in (1,2,3): s=s.replace(f'data-step="{n}" aria-current="step"></li>' if n==1 else f'data-step="{n}"></li>', ...
+[tool] status: Completed
+[tool] Running: grep -n "dots" extension/onboarding.css; ls docs/kiro-logs/ | grep s12; ls .kiro/settings 2>/dev/null; grep -n "s11a\|s11b\|S11a\|S11b\|uncommitted" README.md | head -20; grep -n "^## \|^#...
+[tool] status: Completed
+[tool] Running: head -c 1200 docs/kiro-logs/s12-prompt.md; echo; git show --stat 703d62b | grep -i "s12\|firefox" | head
+[tool] Introspecting
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: mkdir -p .kiro/settings && cat > .kiro/settings/mcp.json <<'EOF' { "mcpServers": { "ghost-from-the-past": { "url": "https://<your-worker>.workers.dev/mcp", "headers": { "A...
+[tool] status: Completed
+[tool] Running: cat > /tmp/p6.py <<'EOF' p='README.md' s=open(p).read() def rep(old,new): global s assert s.count(old)==1, old[:60] s=s.replace(old,new) rep("""then press **Test connection**. To run y...
+[tool] status: Completed
+[tool] Running: grep -c "### Kiro Features Used" README.md; grep -c "fresh Chrome profile" README.md; grep -rn "test-capture\|testHooks" tests/ | head; npm test 2>&1 | tail -25
+[tool] status: Completed
+[tool] Running: cd worker && npx vitest run 2>&1 | tail -6; npm run typecheck 2>&1 | tail -3
+[tool] status: Completed
+[tool] Running: git status --short; timeout 600 npm run test:e2e 2>&1 | tail -40
+[tool] status: Completed
+[tool] Running: ls /workspace/kirohome/.cache/ms-playwright/; which chromium google-chrome chromium-browser 2>/dev/null; grep -n "executablePath\|launchPersistentContext" tests/e2e/run.mjs | head
+[tool] status: Completed
+[tool] Running: git diff --stat -- extension/background.js extension/content.js worker/src/mcp.ts worker/src/search.ts worker/src/landing.ts extension/onboarding.html extension/onboarding.css README.md; s...
+[tool] status: Completed
+All eight fixes are in, and `npm test` passes: worker 47/47 in 7 files, plus a clean `tsc` typecheck, and extension 36/36. I couldn't run `npm run test:e2e` here. Chromium won't start because the system library `libatk-1.0.so.0` is missing, and I don't have the permissions to install it. That run needs to be repeated on a machine that has Playwright's browser dependencies. Nothing was committed, pushed or deployed, and `release/` and the secrets weren't touched.
+
+**Changes:**
+1. **`extension/background.js`:** `BATCH` is now 5. On a 413, sync retries that batch one page at a time. A page that still gets a 413 on its own is removed from the queue and marked `failed: 'too large'` in the recent list, so the same batch can't be retried forever. Other errors stop the sync as before. The send and queue-cleanup code moved into two small helpers inside `doSync`.
+2. **`worker/src/mcp.ts`:** `list_pages` now adds the same untrusted-content notice line and `untrusted: true` that `search_memory` uses, whenever it returns any pages.
+3. **`extension/content.js`:** `getSettings()` reads only `paused`, `blocklist` and `workerUrl`, so content scripts never read the secret. The background script still checks the secret before anything is stored or sent.
+4. **`worker/src/search.ts`:** `forget()` removes duplicate ids with `new Set()` and returns `{deleted: 0}` for an empty list before building the `IN (...)` query.
+5. **`ghost:test-capture`:** nothing in `tests/` sends this event, so I gated it. The listener is only added when `chrome.storage.local.testHooks === true`, and it uses the same `capture()` path with the same privacy checks.
+6. **Accessibility:**
+   - **`extension/onboarding.html` and `onboarding.css`:** each step dot now contains visually hidden "Step N of 3" text.
+   - **`worker/src/landing.ts`:** `button` and `.btn` get a `:focus-visible` outline.
+7. **`README.md`:**
+   - The S11a and S11b rows now say `703d62b`, and a new S12 row (Firefox build) uses the same hash. `git log` shows S11 and S12 landed in that one commit.
+   - s12 is listed under Logs & Prompts.
+   - Added the judges note about a fresh Chrome profile and pausing or removing the extension, and the Kiro Features Used table.
+   - Added the free-tier line about D1 vectors being scanned on every query, so use Vectorize past roughly 1,000-2,000 pages.
+   - Added a short mention of the new `mcp.json` in the Kiro CLI section.
+8. **`.kiro/settings/mcp.json` (new):** it points at `https://<your-worker>.workers.dev/mcp` with the header `Authorization: Bearer ${GHOST_SECRET}`. It has `"disabled": true` so Kiro doesn't try to connect to the placeholder address until the user fills in their own.
+
+**Already in the working tree before I started:** uncommitted edits in `.gitignore`, `extension/lib/blocklist.js`, `extension/lib/redact.js`, `extension/test/privacy.test.mjs` and `worker/src/ingest.ts`, plus an untracked `worker/test/ingest.test.ts`. That extra test file is why the worker count is 47 tests in 7 files. The README still says 45 tests in 6 files, and I didn't update that.
+EXIT 0

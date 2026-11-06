@@ -15,6 +15,7 @@ font:16px/1.5 -apple-system,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-
 .card{width:min(560px,92vw);background:#fff;border:1.5px solid var(--ink);border-radius:28px;padding:36px;text-align:center}
 h1{font-size:28px;margin:16px 0 8px;letter-spacing:-.02em}p{margin:8px 0;color:#333}
 button,.btn{font:inherit;font-weight:600;cursor:pointer;background:var(--bg);color:var(--ink);border:1.5px solid var(--ink);border-radius:999px;padding:12px 22px;margin-top:16px}
+button:focus-visible,.btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
 button:hover{background:var(--ink);color:var(--bg)}button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 code{display:block;word-break:break-all;background:var(--bg);border:1.5px solid var(--ink);border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14px}
 .small{font-size:13px;color:#555}#status{min-height:1.5em;font-weight:600}

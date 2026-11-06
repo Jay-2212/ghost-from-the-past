@@ -89,6 +89,25 @@ test('redact: expanded secret patterns', () => {
   assert.match(R.redact(azureKey), /^\[redacted-secret\]$/);
 });
 
+test('redact: prefixed secret names (AWS_SECRET_ACCESS_KEY=, API_TOKEN=)', () => {
+  const v = 'wJalrXUt' + 'nFEMIK7MDENG' + 'bPxRfiCYzzzzzzzzzzzz';
+  assert.equal(R.redact('AWS_SECRET_ACCESS_KEY=' + v), 'AWS_SECRET_ACCESS[redacted-secret]');
+  assert.doesNotMatch(R.redact('export API_TOKEN="' + v + '"'), /wJalr/);
+  assert.doesNotMatch(R.redact('DB_PASSWORD: ' + v), /wJalr/);
+  assert.doesNotMatch(R.redact('MY_SECRET=' + v), /wJalr/);
+  // a plain "key" in prose is not treated as a secret name
+  assert.match(R.redact('primary key: user_id_and_created_at_ts'), /user_id_and_created_at_ts/);
+});
+
+test('blocklist: cloud consoles blocked by default', () => {
+  assert.ok(B.isBlocked('https://console.aws.amazon.com/ec2/home', D));
+  assert.ok(B.isBlocked('https://us-east-1.console.aws.amazon.com/s3/', D));
+  assert.ok(B.isBlocked('https://portal.azure.com/#home', D));
+  assert.ok(B.isBlocked('https://console.cloud.google.com/iam-admin', D));
+  assert.equal(B.matchUrl('https://aws.amazon.com/blogs/aws/', D), null);
+  assert.equal(B.matchUrl('https://cloud.google.com/run/docs', D), null);
+});
+
 test('hash-route SPAs blocked by path patterns', () => {
   // Hash routes like #/login should be blocked
   assert.ok(B.isBlocked('https://app.example.com/#/login', D), 'should block #/login');

@@ -2,6 +2,7 @@ node_modules/
 .wrangler/
 .dev.vars
 *.log
+!docs/kiro-logs/*.log
 dist/
 shots/*.tmp
 
