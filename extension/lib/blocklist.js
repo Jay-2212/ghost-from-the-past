@@ -36,12 +36,12 @@
     'mail.google.com', 'inbox.google.com', 'outlook.live.com', 'outlook.office.com', 'outlook.office365.com', 'mail.yahoo.com',
     'mail.proton.me', '*.protonmail.com', 'mail.zoho.com', 'mail.zoho.in', '*.fastmail.com', 'icloud.com/mail*', 'mail.aol.com',
     'web.whatsapp.com', 'web.telegram.org', 'messages.google.com', 'discord.com/channels*', 'app.slack.com', 'teams.microsoft.com',
-    'www.messenger.com', 'instagram.com/direct*', 'x.com/messages*', 'twitter.com/messages*', 'linkedin.com/messaging*',
+    'www.messenger.com', 'instagram.com/direct*', 'x.com/messages*', 'twitter.com/messages*', 'facebook.com/messages*', 'linkedin.com/messaging*',
     '',
     '# Private documents, workspaces and AI chats',
     'docs.google.com', 'drive.google.com', 'calendar.google.com', 'contacts.google.com', 'keep.google.com', 'photos.google.com',
     'onedrive.live.com', '*.sharepoint.com', 'office.com', 'dropbox.com/home*', 'app.box.com',
-    'notion.so', '*.slack.com', '*.atlassian.net',
+    'notion.so', 'notion.com', '*.slack.com', '*.atlassian.net',
     'chatgpt.com', 'chat.openai.com', 'claude.ai', 'gemini.google.com',
     '',
     '# Cloud consoles',
@@ -138,6 +138,8 @@
       p = p.replace(/^www\./, '');
       return host === p || host.endsWith('.' + p);
     }
+    // "*.x" matches the apex x as well as any subdomain
+    if (p.slice(0, 2) === '*.' && host === p.slice(2).replace(/^www\./, '')) return true;
     return globToRegExp(p).test(host);
   }
 

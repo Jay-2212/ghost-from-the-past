@@ -16,12 +16,17 @@ const CORS: Record<string, string> = {
   'access-control-max-age': '86400',
 };
 
+// /mcp responses to requests authenticated by ?token= get no CORS headers
+const NO_CORS = new WeakSet<Response>();
+
 function withCors(res: Response, path: string): Response {
   const h = new Headers(res.headers);
   h.set('x-content-type-options', 'nosniff');
   
   // Only add CORS headers for browser-facing routes
-  if (path === '/mcp' || path === '/health' || path === '/' || path === 'OPTIONS') {
+  if (NO_CORS.has(res)) {
+    // query-token auth: don't let other origins read the response
+  } else if (path === '/mcp' || path === '/health' || path === '/' || path === 'OPTIONS') {
     for (const [k, v] of Object.entries(CORS)) h.set(k, v);
   }
   
@@ -32,15 +37,15 @@ function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8' } });
 }
 
-async function authorised(request: Request, env: Env, allowQuery: boolean): Promise<boolean> {
-  if (!secretConfigured(env)) return false;
+async function authorised(request: Request, env: Env, allowQuery: boolean): Promise<'header' | 'query' | null> {
+  if (!secretConfigured(env)) return null;
   const header = request.headers.get('authorization');
-  if (header && (await verifyBearer(header, env.GHOST_SECRET))) return true;
+  if (header && (await verifyBearer(header, env.GHOST_SECRET))) return 'header';
   if (allowQuery) {
     const token = new URL(request.url).searchParams.get('token');
-    if (token && (await verifyBearer(`Bearer ${token}`, env.GHOST_SECRET))) return true;
+    if (token && (await verifyBearer(`Bearer ${token}`, env.GHOST_SECRET))) return 'query';
   }
-  return false;
+  return null;
 }
 
 async function route(request: Request, env: Env): Promise<Response> {
@@ -99,14 +104,15 @@ async function route(request: Request, env: Env): Promise<Response> {
       return json({ error: 'nonce must be a hex string, 32-128 chars' }, 400);
     }
     
-    const proof = await verifyProof(env.GHOST_SECRET!, url.origin, body.nonce);
+    const proof = await verifyProof(env.GHOST_SECRET!.trim(), url.origin, body.nonce);
     return json({ ok: true, proof });
   }
   
   if (!secretConfigured(env)) {
     return json({ error: 'GHOST_SECRET is missing or too weak on this Worker. Set it in the Cloudflare dashboard (Workers & Pages > your Worker > Settings > Variables and Secrets, type Secret) to the value from the Ghost setup page.' }, 503);
   }
-  if (!(await authorised(request, env, path === '/mcp' && env.ALLOW_QUERY_TOKEN === 'true'))) {
+  const via = await authorised(request, env, path === '/mcp' && env.ALLOW_QUERY_TOKEN === 'true');
+  if (!via) {
     return new Response(JSON.stringify({ error: 'unauthorised' }), {
       status: 401,
       headers: { 'content-type': 'application/json', 'www-authenticate': 'Bearer realm="ghost-from-the-past"' },
@@ -116,7 +122,11 @@ async function route(request: Request, env: Env): Promise<Response> {
   // Ensure schema exists before processing DB-touching routes
   await ensureSchema(env.DB);
 
-  if (path === '/mcp') return handleMcp(request, env);
+  if (path === '/mcp') {
+    const res = await handleMcp(request, env);
+    if (via === 'query') NO_CORS.add(res);
+    return res;
+  }
 
   if (path === '/api/stats' && request.method === 'GET') return json({ ok: true, ...(await stats(env)) });
 

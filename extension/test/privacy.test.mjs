@@ -15,7 +15,7 @@ test('default blocklist blocks sensitive categories', () => {
     'https://www.icicibank.com/personal-banking', 'https://www.paypal.com/myaccount', 'https://pay.google.com/', 'https://paytm.com/', 'https://www.phonepe.com/',
     'https://shop.example.com/checkout/step2', 'https://kite.zerodha.com/dashboard', 'https://mychart.example.org/MyChart/', 'https://myaadhaar.uidai.gov.in/',
     'https://eportal.incometax.gov.in/iec/foservices/', 'https://www.irs.gov/account', 'https://www.digilocker.gov.in/', 'https://github.com/settings/tokens',
-    'https://docs.google.com/document/d/x/edit', 'https://drive.google.com/drive/my-drive', 'https://www.notion.so/acme/Plan-123',
+    'https://docs.google.com/document/d/x/edit', 'https://drive.google.com/drive/my-drive', 'https://www.notion.so/acme/Plan-123', 'https://www.notion.com/acme/Plan-123', 'https://www.facebook.com/messages/t/123',
     'https://acme.slack.com/archives/C1', 'https://acme.atlassian.net/wiki/x', 'https://chatgpt.com/c/1', 'https://claude.ai/chat/1', 'https://vault.zoho.com/',
   ];
   for (const u of blocked) assert.ok(B.isBlocked(u, D), `should block ${u}`);
@@ -25,7 +25,7 @@ test('default blocklist allows ordinary reading', () => {
   const allowed = ['https://en.wikipedia.org/wiki/Ghost', 'https://developer.mozilla.org/en-US/docs/Web', 'https://github.com/Jay-2212/ghost-from-the-past',
     'https://www.youtube.com/watch?v=x', 'https://news.ycombinator.com/', 'https://www.reddit.com/r/Ghosts/comments/abc/x/', 'https://stackoverflow.com/questions/1/x',
     'https://www.amazon.in/dp/B000', 'https://example.com/blog/how-to-pick-a-password-manager',
-    'https://developers.google.com/maps', 'https://slack.com/help/articles/1', 'https://acme.notion.site/Public-page', 'https://www.dropbox.com/features'];
+    'https://developers.google.com/maps', 'https://acme.notion.site/Public-page', 'https://www.dropbox.com/features'];
   for (const u of allowed) assert.equal(B.matchUrl(u, D), null, `should allow ${u}`);
 });
 
@@ -87,6 +87,20 @@ test('redact: expanded secret patterns', () => {
   assert.match(R.redact(dopv1), /^\[redacted-secret\]$/);
   assert.match(R.redact(shopify), /^\[redacted-secret\]$/);
   assert.match(R.redact(azureKey), /^\[redacted-secret\]$/);
+});
+
+test('blocklist: "*.x" matches the apex host and subdomains', () => {
+  for (const u of ['https://okta.com/', 'https://acme.okta.com/app', 'https://www.auth0.com/', 'https://slack.com/help/articles/1', 'https://acme.slack.com/archives/C1']) {
+    assert.ok(B.isBlocked(u, D), `should block ${u}`);
+  }
+  assert.ok(B.isBlocked('https://corp-wiki.io/', '*.corp-wiki.io'));
+  assert.ok(!B.isBlocked('https://notokta.com/', '*.okta.com'));
+});
+
+test('redact: Cloudflare API tokens (cfut_/cfat_/cfct_)', () => {
+  for (const pre of ['cf' + 'ut_', 'cf' + 'at_', 'cf' + 'ct_']) {
+    assert.match(R.redact('token ' + pre + 'a'.repeat(40) + ' end'), /^token \[redacted-secret\] end$/);
+  }
 });
 
 test('redact: prefixed secret names (AWS_SECRET_ACCESS_KEY=, API_TOKEN=)', () => {

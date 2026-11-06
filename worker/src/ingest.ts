@@ -22,7 +22,7 @@ export interface IncomingPage {
 export interface IngestResult {
   url: string;
   id?: string;
-  status: 'created' | 'merged' | 'updated' | 'skipped';
+  status: 'created' | 'merged' | 'updated' | 'skipped' | 'error';
   chunks?: number;
   vector?: boolean;
   reason?: string;
@@ -119,65 +119,71 @@ export async function ingestPages(env: Env, rawPages: unknown[]): Promise<Ingest
       results.push({ url: String((raw as any)?.url ?? ''), status: 'skipped', reason: v.reason });
       continue;
     }
-    const p = v.page;
-    const url = normaliseUrl(p.url);
-    const id = await pageIdFromUrl(url);
-    const markdown = p.markdown.slice(0, MAX_MARKDOWN);
-    const hash = await sha256Hex(markdown);
-    const title = (p.title || url).slice(0, 500);
-    const domain = (p.domain || domainOf(url)).slice(0, 255);
-    const firstSeen = clampInt(p.firstSeen, now, 0, now + 86_400_000);
-    const lastSeen = clampInt(p.lastSeen, firstSeen, firstSeen, now + 86_400_000);
-    const delta = clampInt(p.activeMsDelta, 0, 0, 86_400_000);
-    const kind = typeof p.kind === 'string' && KIND_RE.test(p.kind) ? p.kind : 'article';
-    const meta = p.meta && typeof p.meta === 'object' ? JSON.stringify(p.meta).slice(0, 4000) : null;
-    const excerpt = (p.excerpt || '').slice(0, 500);
-    const lang = (p.lang || '').slice(0, 20);
-    const words = markdown.split(/\s+/).filter(Boolean).length;
+    try {
+      const p = v.page;
+      const url = normaliseUrl(p.url);
+      const id = await pageIdFromUrl(url);
+      const markdown = p.markdown.slice(0, MAX_MARKDOWN);
+      const hash = await sha256Hex(markdown);
+      const title = (p.title || url).slice(0, 500);
+      const domain = (p.domain || domainOf(url)).slice(0, 255);
+      const firstSeen = clampInt(p.firstSeen, now, 0, now + 86_400_000);
+      const lastSeen = clampInt(p.lastSeen, firstSeen, firstSeen, now + 86_400_000);
+      const delta = clampInt(p.activeMsDelta, 0, 0, 86_400_000);
+      const kind = typeof p.kind === 'string' && KIND_RE.test(p.kind) ? p.kind : 'article';
+      const meta = p.meta && typeof p.meta === 'object' ? JSON.stringify(p.meta).slice(0, 4000) : null;
+      const excerpt = (p.excerpt || '').slice(0, 500);
+      const lang = (p.lang || '').slice(0, 20);
+      const words = markdown.split(/\s+/).filter(Boolean).length;
 
-    const existing = await env.DB.prepare('SELECT id, content_hash FROM pages WHERE id = ?').bind(id).first<{ id: string; content_hash: string }>();
+      const existing = await env.DB.prepare('SELECT id, content_hash FROM pages WHERE id = ?').bind(id).first<{ id: string; content_hash: string }>();
 
-    if (!existing) {
-      await env.DB.prepare(
-        `INSERT INTO pages (id, url, title, domain, excerpt, lang, content_md, content_hash, word_count,
-           first_seen, last_seen, active_ms, visits, created_at, updated_at, kind, meta)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`
-      )
-        .bind(id, url, title, domain, excerpt, lang, markdown, hash, words, firstSeen, lastSeen, delta, now, now, kind, meta)
-        .run();
-      const w = await writeChunks(env, id, title, markdown);
-      results.push({ url, id, status: 'created', ...w });
-      continue;
-    }
-
-    const merge = env.DB.prepare(
-      `UPDATE pages SET first_seen = MIN(first_seen, ?), last_seen = MAX(last_seen, ?),
-         active_ms = active_ms + ?, visits = visits + 1, title = ?, updated_at = ? WHERE id = ?`
-    ).bind(firstSeen, lastSeen, delta, title, now, id);
-
-    if (existing.content_hash === hash) {
-      await merge.run();
-      // A previous request may have inserted the page row and then failed before writing chunks;
-      // without this the page would never reach FTS/vector search.
-      const hasChunk = await env.DB.prepare('SELECT 1 AS one FROM chunks WHERE page_id = ? LIMIT 1').bind(id).first();
-      if (!hasChunk) {
+      if (!existing) {
+        await env.DB.prepare(
+          `INSERT INTO pages (id, url, title, domain, excerpt, lang, content_md, content_hash, word_count,
+             first_seen, last_seen, active_ms, visits, created_at, updated_at, kind, meta)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`
+        )
+          .bind(id, url, title, domain, excerpt, lang, markdown, hash, words, firstSeen, lastSeen, delta, now, now, kind, meta)
+          .run();
         const w = await writeChunks(env, id, title, markdown);
-        results.push({ url, id, status: 'merged', ...w });
-      } else {
-        results.push({ url, id, status: 'merged', chunks: 0 });
+        results.push({ url, id, status: 'created', ...w });
+        continue;
       }
-      continue;
-    }
 
-    await deleteChunkData(env, [id]);
-    await env.DB.batch([
-      merge,
-      env.DB.prepare(
-        `UPDATE pages SET content_md = ?, content_hash = ?, word_count = ?, excerpt = ?, lang = ?, kind = ?, meta = ?, domain = ? WHERE id = ?`
-      ).bind(markdown, hash, words, excerpt, lang, kind, meta, domain, id),
-    ]);
-    const w = await writeChunks(env, id, title, markdown);
-    results.push({ url, id, status: 'updated', ...w });
+      const merge = env.DB.prepare(
+        `UPDATE pages SET first_seen = MIN(first_seen, ?), last_seen = MAX(last_seen, ?),
+           active_ms = active_ms + ?, visits = visits + 1, title = ?, updated_at = ? WHERE id = ?`
+      ).bind(firstSeen, lastSeen, delta, title, now, id);
+
+      if (existing.content_hash === hash) {
+        await merge.run();
+        // A previous request may have inserted the page row and then failed before writing chunks;
+        // without this the page would never reach FTS/vector search.
+        const hasChunk = await env.DB.prepare('SELECT 1 AS one FROM chunks WHERE page_id = ? LIMIT 1').bind(id).first();
+        if (!hasChunk) {
+          const w = await writeChunks(env, id, title, markdown);
+          results.push({ url, id, status: 'merged', ...w });
+        } else {
+          results.push({ url, id, status: 'merged', chunks: 0 });
+        }
+        continue;
+      }
+
+      await deleteChunkData(env, [id]);
+      await env.DB.batch([
+        merge,
+        env.DB.prepare(
+          `UPDATE pages SET content_md = ?, content_hash = ?, word_count = ?, excerpt = ?, lang = ?, kind = ?, meta = ?, domain = ? WHERE id = ?`
+        ).bind(markdown, hash, words, excerpt, lang, kind, meta, domain, id),
+      ]);
+      const w = await writeChunks(env, id, title, markdown);
+      results.push({ url, id, status: 'updated', ...w });
+    } catch (e) {
+      // one bad page must not fail the batch; the extension keeps it queued and retries next sync
+      console.warn('ingest page failed', (e as Error).message);
+      results.push({ url: String((raw as any)?.url ?? ''), status: 'error', reason: 'internal error' });
+    }
   }
   return results;
 }

@@ -1,0 +1,62 @@
+[tool] Running: cd worker/src && grep -n "verifyBearer\|secretConfigured" -A12 auth.ts | head -60; grep -n "title" mcp.ts | head -40
+[tool] Running: cat worker/src/ingest.ts; grep -n "ingest\|status\|queue" extension/background.js | head -80
+[tool] status: Completed
+[tool] status: Completed
+[tool] Reading background.js:176-270, auth.ts:21-65
+[tool] status: Completed
+[tool] Running: cd worker && python3 - <<'EOF' import re p='src/auth.ts'; s=open(p).read() s=s.replace(""" if (!authHeader || !ghostSecret) { return false; } const match = authHeader.match(/^Bearer\\s+(....
+[tool] status: Completed
+[tool] Running: cd worker && python3 - <<'EOF' p='src/ingest.ts'; s=open(p).read() s=s.replace("status: 'created' | 'merged' | 'updated' | 'skipped';","status: 'created' | 'merged' | 'updated' | 'skipped'...
+[tool] status: Completed
+Now the extension side.
+[tool] Running: cd extension && python3 - <<'EOF' p='background.js'; s=open(p).read() old=""" if (res.ok) { await res.json().catch(() => ({})); await settle(batch); sent += batch.lengt...
+[tool] status: Completed
+[tool] Reading ingest.test.ts:1
+[tool] status: Completed
+[tool] Running: cd worker && python3 - <<'EOF' p='test/ingest.test.ts'; s=open(p).read() s=s.replace(""" await expect(ingestPages(env, [page])).rejects.toThrow('simulated failure'); expect(db.chunks.size)...
+[tool] status: Completed
+[tool] Reading search.ts:116-160
+[tool] status: Completed
+[tool] Running: cd worker && grep -n "query(" -A12 src/store.ts | head -50
+[tool] status: Completed
+[tool] Running: cd worker && python3 - <<'EOF' p='src/search.ts'; s=open(p).read() s=s.replace(""" const ftsQ = buildFtsQuery(args.query); let fts""",""" const ftsQ = buildFtsQuery(args.query); // Filters...
+[tool] status: Completed
+[tool] Reading util.ts:71-100
+[tool] status: Completed
+[tool] Running: cd worker && python3 - <<'EOF' p='src/util.ts'; s=open(p).read() old=""" 'token', 'access_token', 'auth', 'key', 'code', 'session', 'sid', 'password' ]; trackingParams.forEach(p => par...
+[tool] status: Completed
+Now the tests for items 1 and 5, plus the mcp.ts title fix.
+[tool] Running: cd worker && python3 - <<'EOF' p='test/util.test.ts'; s=open(p).read() s=s.replace("describe('normaliseUrl', () => {\n","""describe('normaliseUrl', () => { it('strips signature, token, otp...
+[tool] status: Completed
+[tool] Running: cd worker && python3 - <<'EOF' p='src/mcp.ts'; s=open(p).read() s=s.replace("import { forget, getPage, hybridSearch, listPages, stats } from './search';\n","""import { forget, getPage, hyb...
+[tool] status: Completed
+[tool] Running: python3 - <<'EOF' p='.kiro/steering/tech.md'; s=open(p).read() s=s.replace('- Status badge: empty when haunting, "⏸" when paused (black text on black background `#111`)','- Status badge ...
+[tool] status: Completed
+[tool] Running: ls PRIVACY.md 2>&1; git remote -v | head -1; grep -n "meta\|redact" extension/background.js | head -8
+[tool] status: Completed
+[tool] Creating PRIVACY.md
+[tool] status: Completed
+[tool] Running: grep -n '"test"' package.json; (cd worker && npm test 2>&1 | tail -8; npx tsc --noEmit && echo TSC_OK); (cd extension && npm test 2>&1 | grep -E "^# (tests|pass|fail)")
+[tool] status: Completed
+[tool] Running: npm test 2>&1 | grep -E "Tests |^# (pass|fail)"; node --check extension/background.js && echo OK; git status --short
+[tool] status: Completed
+I made all seven fixes and nothing was skipped. Root `npm test` passes: worker vitest 50/50 in 7 files, extension 38/38. `npx tsc --noEmit` in `worker/` is clean. Nothing was committed, pushed or deployed.
+
+**Changes by item:**
+1. **Trailing-newline secret**: `verifyBearer` now compares against `GHOST_SECRET.trim()`, and a whitespace-only secret is rejected. I added a test for a secret ending in `\n` and one wrapped in spaces with `\r\n`.
+2. **Hostile titles**: `mcp.ts` has a small `oneLine()` helper that turns `[\r\n\u2028\u2029]+` into a single space. It's applied to titles in the `search_memory`, `list_pages` and `get_page` text output.
+3. **One bad page no longer fails the batch**:
+   - In `ingestPages`, each page is wrapped in try/catch. A page that throws comes back as `{url, status:'error', reason:'internal error'}` and the rest of the batch continues.
+   - In `doSync` in `background.js`, after a 200 (including the one-page-at-a-time retry after a 413), pages whose result has `status:'error'` stay queued. Results are matched to pages by position, which is how the Worker returns them.
+   - The existing test that expected the whole call to throw now expects `status:'error'`. I added a test where one page throws and two others are created.
+4. **Filtered searches**: when `from`, `to`, `domain` or `kind` is set, the full-text candidate limit goes from 40 to 200 and the fused list from 80 to 300. Two deviations from your spec:
+   - Vector candidates go to 100, not 200, because 100 is Vectorize's documented `topK` maximum.
+   - The chunk-id `IN (...)` lookup now runs in slices of 80, so a filtered query doesn't exceed D1's limit of 100 bound parameters.
+5. **URL credential stripping**: `sig`, `signature`, `id_token`, `refresh_token`, `otp` and any `X-Amz-*` parameter are now removed. Matching is case-insensitive and also applies to the parameters that were already stripped. There's a new test in `util.test.ts`.
+6. **Badge doc**: `tech.md` now says the badge is empty when connected, `off` when paused and `!` when not configured, matching `setBadge`.
+7. **Privacy policy**: I added `PRIVACY.md` and linked it from the README privacy section. The free-tier note now says to switch to Vectorize "beyond a few hundred pages".
+
+**Files changed:** `worker/src/{auth,mcp,ingest,search,util}.ts`, `worker/test/{auth,ingest,util}.test.ts`, `extension/background.js`, `.kiro/steering/tech.md`, `README.md`, new `PRIVACY.md`.
+
+The README's Testing section still says "47 tests in 7 files" for the worker. The real count is now 50, and I left that line as it was.
+EXIT 0

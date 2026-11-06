@@ -1,0 +1,39 @@
+[tool] Running: git status --short | head -30; grep -n "matchOne" -A30 extension/lib/blocklist.js | head -60; grep -n "cfut\|cfat\|cfct" .kiro/hooks/secret-guard.mjs; grep -n "object-src\|content_security...
+[tool] status: Completed
+[tool] Running: grep -n "manifest\|content_security\|csp" scripts/build-firefox.mjs | head; grep -n "regex\|/g\b\|PATTERNS\|hf_\|xox" extension/lib/redact.js | head -40; grep -n "GHOST_SECRET\|verifyProof...
+[tool] status: Completed
+[tool] Reading index.ts:2-161, auth.ts:31-100
+[tool] status: Completed
+[tool] Running: grep -rn "verifyProof\|GHOST_SECRET" worker/src | grep -v "^worker/src/index.ts:8[3]\|107"; grep -n "export async function ingestPages" -A60 worker/src/ingest.ts; grep -n "results" extensi...
+[tool] status: Completed
+[tool] Running: sed -n 173,200p worker/src/ingest.ts; sed -n 195,260p extension/background.js
+[tool] status: Completed
+[tool] Running: python3 - <<'EOF' import re def sub(path, old, new, count=1): s=open(path).read() assert s.count(old)==count, (path, old, s.count(old)) open(path,'w').write(s.replace(old,new)) sub('ext...
+[tool] status: Completed
+[tool] Reading privacy.test.mjs:2-51, privacy.test.mjs:68-92
+[tool] status: Completed
+[tool] Running: grep -on "'\*\.[a-z0-9.-]*'" extension/lib/blocklist.js | tr '\n' ' '
+[tool] status: Completed
+[tool] Running: cd extension && npm test 2>&1 | grep -E "^# |not ok|should" | head
+[tool] status: Completed
+[tool] Running: cd extension && npm test 2>&1 | grep -E "^# (tests|pass|fail)|^not ok|should allow"
+[tool] status: Completed
+[tool] Running: python3 - <<'EOF' p='extension/test/privacy.test.mjs' s=open(p).read() old="'https://developers.google.com/maps', 'https://slack.com/help/articles/1', " assert s.count(old)==1 s=s.replace(...
+[tool] status: Completed
+Firefox build clones the manifest including CSP, so it's consistent. Now the root and worker checks.
+[tool] Running: cat package.json | grep -A5 '"scripts"'; cd worker && npx tsc --noEmit && echo TSC_OK; npx vitest run 2>&1 | tail -5
+[tool] status: Completed
+[tool] Running: npm test 2>&1 | grep -E "Tests |^# (tests|pass|fail)"; echo exit=$?; git diff --stat
+[tool] status: Completed
+I did items 1 to 5 and checked item 6, which needed no change. One side effect needs your decision: `slack.com/help` is now blocked by default (details under item 1). `npm test` passes: 50/50 worker tests and 40/40 extension tests (38 before, plus the 2 I added). `npx tsc --noEmit` in `worker/` is clean. Nothing was committed, and your earlier uncommitted edits are still in the tree.
+
+**Files changed:** `extension/lib/blocklist.js`, `extension/lib/redact.js`, `extension/manifest.json`, `extension/test/privacy.test.mjs`, `worker/src/index.ts`.
+
+1. **Done.** In `matchOne`, a pattern like `*.okta.com` now matches `okta.com` itself as well as its subdomains. It does not match `notokta.com`. I added a test for this.
+   - **Behaviour change:** the default list includes `*.slack.com`, so `https://slack.com/help/...` is now blocked. The existing "allows ordinary reading" test expected it to be allowed, so I removed that URL from the test. If you want Slack's public help pages captured again, I can add an exception for `slack.com`.
+2. **Done.** Redaction now strips Cloudflare tokens starting with `cfut_`, `cfat_` or `cfct_`, using the same pattern as `secret-guard.mjs`. The new test builds the fake tokens from string pieces, like the existing tests do.
+3. **Done.** The CSP now says `object-src 'none'`. `scripts/build-firefox.mjs` copies the Chrome manifest with `structuredClone` and doesn't change the CSP, so the Firefox build gets the same value.
+4. **Done.** `/api/verify` now uses the trimmed `GHOST_SECRET` for the proof, matching `verifyBearer`. That is the only place `verifyProof` is called.
+5. **Done, without a test.** `authorised()` now reports whether the request used the header or `?token=`. When it was `?token=`, the `/mcp` response is sent without CORS headers. Header auth keeps the current CORS headers. No existing test file covers `index.ts` or CORS, so I skipped the test as you said.
+6. **Confirmed, no change needed.** `ingestPages` adds exactly one result for each input page, in input order, on every path: skipped, created, merged (with or without rewriting chunks), updated, and error. There is no "blocked" status in the Worker. So matching results to the batch by position in `doSync` is correct.
+EXIT 0

@@ -1,0 +1,29 @@
+[tool] Running: git status --short; grep -n "utm\|token\|param" worker/src/util.ts | head -30; grep -n "notion\|x.com/messages" extension/lib/blocklist.js; grep -n "class D1VectorStore" -A40 worker/src/st...
+[tool] status: Completed
+[tool] Running: grep -n "credential\|token=\|normaliseUrl\|normalizeUrl" worker/test/util.test.ts | head; grep -n "notion\|messages" extension/test/privacy.test.mjs | head; grep -n "D1VectorStore\|prepare...
+[tool] status: Completed
+[tool] Reading content.js:41-140, util.test.ts:79-90, privacy.test.mjs:11-40
+[tool] status: Completed
+[tool] Running: set -e sed -i "s/'sig', 'signature', 'id_token', 'refresh_token', 'otp'/'sig', 'signature', 'id_token', 'refresh_token', 'otp',\n 'api_key', 'apikey', 'secret', 'jwt', 'sessionid'/" worker...
+[tool] status: Completed
+Now the store change, util test, a small store test with a fake DB, and the README clause.
+[tool] Running: set -e python3 - <<'EOF' p='worker/src/store.ts'; s=open(p).read() old=""" async query(values: number[], topK: number): Promise<VectorQueryResult[]> { const result = await this.db""" new="...
+[tool] status: Completed
+I did items 1–3. I skipped item 4 because it isn't a trivial early return. `npm test` passes (worker 53/53 in 8 files, extension 40/40) and `cd worker && npx tsc --noEmit` is clean. Nothing was committed, and your existing uncommitted edits are still there.
+
+**Done**
+1. **URL params:** `normaliseUrl` in `worker/src/util.ts` now also strips `api_key`, `apikey`, `secret`, `jwt` and `sessionid`. A new test in `worker/test/util.test.ts` uses mixed-case versions of these and expects only `q=ok` to remain.
+2. **Blocklist:** `DEFAULT_BLOCKLIST` in `extension/lib/blocklist.js` now includes `notion.com` and `facebook.com/messages*`. Matching URLs for both were added to the blocked list in `extension/test/privacy.test.mjs`.
+3. **D1 vector cap:**
+   - `D1VectorStore.query` in `worker/src/store.ts` now runs `SELECT COUNT(*) AS n FROM chunk_vectors` first.
+   - Above 3000 rows (the new exported constant `D1_VECTOR_MAX_ROWS`), it logs one `console.warn` per isolate and returns `[]` without loading any rows, so search uses full-text only.
+   - The new `worker/test/store.test.ts` uses a fake DB to test both sides of the cap: normal ranking under it, and `[]` with no row load above it.
+   - The README free-tier note now says: "above 3,000 chunks the D1 vector search is skipped and search uses full-text only."
+
+**Skipped**
+4. **`content.js` early return:** the settings are read asynchronously, so adding a check before the timers start would wrap the whole startup in a promise. It would also change behaviour. A tab that opened on a blocked page (for example `x.com/messages`) would never capture after the user navigates to an allowed page in the same tab. Un-pausing wouldn't resume capture in tabs that are already open either. `capture()` already checks pause and the blocklist before it extracts or sends anything.
+
+**Files changed:** `worker/src/util.ts`, `worker/test/util.test.ts`, `worker/src/store.ts`, `worker/test/store.test.ts` (new), `extension/lib/blocklist.js`, `extension/test/privacy.test.mjs`, `README.md`.
+
+The README test counts are out of date: it says 47 worker tests in 7 files and 38 extension tests, but the real numbers are now 53 in 8 files and 40. I left them alone because they weren't in scope.
+EXIT 0

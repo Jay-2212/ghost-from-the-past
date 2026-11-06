@@ -36,7 +36,8 @@ export async function timingSafeCompare(expected: ArrayBuffer, actual: ArrayBuff
  * Extracts the token from "Bearer <token>" format, hashes it, and compares with secret hash.
  */
 export async function verifyBearer(authHeader: string | null, ghostSecret: string | undefined): Promise<boolean> {
-  if (!authHeader || !ghostSecret) {
+  const secret = ghostSecret?.trim();
+  if (!authHeader || !secret) {
     return false;
   }
 
@@ -48,7 +49,7 @@ export async function verifyBearer(authHeader: string | null, ghostSecret: strin
   const token = match[1];
 
   try {
-    const expectedHash = await hashSecret(ghostSecret);
+    const expectedHash = await hashSecret(secret);
     const actualHash = await hashSecret(token);
     return await timingSafeCompare(expectedHash, actualHash);
   } catch (e) {

@@ -70,7 +70,7 @@ Page text returned by `search_memory` and `get_page` is marked as untrusted thir
 
 ## Privacy
 
-Ghost is built privacy-first:
+Ghost is built privacy-first. The short privacy policy is in [PRIVACY.md](PRIVACY.md).
 
 - **No central server.** Everything runs in your Cloudflare Workers account. We never see your data.
 - **Incognito is never captured.** Private browsing stays private. The extension refuses to run in incognito mode.
@@ -275,7 +275,7 @@ Check [Cloudflare's current free tier limits](https://developers.cloudflare.com/
 
 By default the Worker stores vectors in D1 (D1VectorStore: JSON vectors, brute-force cosine search). It uses Vectorize only if you add a `VECTORS` binding (see the comment in `worker/wrangler.jsonc`) and don't set `VECTOR_MODE=d1`. D1 is slower than Vectorize at large scale, but needs no extra setup.
 
-D1-stored vectors are scanned in full on every semantic query, so switch to Vectorize beyond roughly 1,000-2,000 pages.
+D1-stored vectors are scanned in full on every semantic query, so switch to Vectorize beyond a few hundred pages; above 3,000 chunks the D1 vector search is skipped and search uses full-text only.
 
 ---
 
@@ -328,7 +328,7 @@ npm test
 npm run typecheck
 ```
 
-47 tests in 7 files: `auth.test.ts` (bearer compare, origin-bound proof, weak/placeholder secret rejection), `chunk.test.ts`, `embed.test.ts`, `search.test.ts`, `util.test.ts` `schema.test.ts` (the `ensureSchema` fallback creates the tables only when they are missing) and `ingest.test.ts` (a retried page whose chunks were never written gets them on the merge path).
+53 tests in 8 files: `auth.test.ts` (bearer compare, origin-bound proof, weak/placeholder secret rejection), `chunk.test.ts`, `embed.test.ts`, `search.test.ts`, `util.test.ts` `schema.test.ts` (the `ensureSchema` fallback creates the tables only when they are missing) and `ingest.test.ts` (a retried page whose chunks were never written gets them on the merge path; one failing page returns `error` without failing the batch) and `store.test.ts` (the D1 vector-scan cap).
 
 ### Extension Tests (Node.js `node:test`)
 
@@ -337,7 +337,7 @@ cd extension
 npm test
 ```
 
-38 tests covering extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking. `npm test` runs `node --test test/*.test.mjs`. From the repo root, `node --test extension/test` also works on Node 22: Node no longer expands a directory there, so it loads `extension/test/index.js`, which imports every `*.test.mjs`.
+40 tests covering extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking. `npm test` runs `node --test test/*.test.mjs`. From the repo root, `node --test extension/test` also works on Node 22: Node no longer expands a directory there, so it loads `extension/test/index.js`, which imports every `*.test.mjs`.
 
 ### End-to-End Tests (Playwright)
 
@@ -444,7 +444,8 @@ Based on `git log --oneline` and session logs in [`docs/kiro-logs/`](docs/kiro-l
 | `703d62b` | **Kiro** | `ghost` custom agent, Kiro CLI hook scripts (secret-guard rewrite, test-on-write), hooks README | S11a |
 | `703d62b` | **Kiro** | Doc and repo fixes from the final audits: README deploy/test/Kiro sections, steering and design corrections, manifest cleanup, `extension/node_modules` untracked, logs README | S11b |
 | `703d62b` | **Kiro** | Firefox build: `scripts/build-firefox.mjs` (Firefox manifest in `dist/firefox/`, Firefox release zip), Chrome-only API audit ([s12.log](docs/kiro-logs/s12.log)) | S12 |
-| (this commit) | **Kiro** (claude-opus-5.5) + **Hark** | Production-readiness pass after a three-reviewer audit (Kiro, Grok, Antigravity): sync no longer wedges on 413 (batch 5, per-page retry), merge path rewrites missing chunks, `list_pages` marked untrusted, content script no longer reads the secret, test hook gated, `forget([])` guard, more default-blocked consoles and `AWS_SECRET_ACCESS_KEY=`-style redaction, a11y fixes, `.kiro/settings/mcp.json`; Hark: README/test-count updates and review | S13a, S13b |
+| `84a4280` | **Kiro** (claude-opus-5.5) + **Hark** | Production-readiness pass after a three-reviewer audit (Kiro, Grok, Antigravity): sync no longer wedges on 413 (batch 5, per-page retry), merge path rewrites missing chunks, `list_pages` marked untrusted, content script no longer reads the secret, test hook gated, `forget([])` guard, more default-blocked consoles and `AWS_SECRET_ACCESS_KEY=`-style redaction, a11y fixes, `.kiro/settings/mcp.json`; Hark: README/test-count updates and review | S13a, S13b |
+| (this commit) | **Kiro** (claude-opus-5.5) + **Hark** | Second audit round (Kiro, Grok, Antigravity): one failing page no longer fails a sync batch (per-page `error` results, errored pages stay queued), filtered searches widen the candidate pool, trimmed `GHOST_SECRET` for bearer and proof, MCP titles kept on one line, more credential URL params stripped (case-insensitive, `X-Amz-*`), `*.x` blocklist rules also match the apex, `notion.com`/`facebook.com/messages*` blocked, Cloudflare token redaction, CSP `object-src 'none'`, no CORS on `?token=` MCP responses, D1 vector scan capped at 3,000 chunks, `PRIVACY.md`; Hark: review triage, README counts | S14a, S14b, S14c |
 
 **Product owner (Jay)**: idea, name and requirements. `docs/BRIEF.md` was written down by Hark from those requirements.
 
@@ -477,6 +478,7 @@ Kiro session logs and prompts are in [`docs/kiro-logs/`](docs/kiro-logs/) ([how 
 - **[s11b-prompt.md](docs/kiro-logs/s11b-prompt.md)**, **[s11c-prompt.md](docs/kiro-logs/s11c-prompt.md)**, **[s11b.log](docs/kiro-logs/s11b.log)**: S11a checks and the final-audit doc/repo fixes, run on the `ghost` agent ([audits](docs/reviews/)).
 - **[s12-prompt.md](docs/kiro-logs/s12-prompt.md)**, **[s12.log](docs/kiro-logs/s12.log)**: Firefox build (`scripts/build-firefox.mjs`).
 - **[s13a-prompt.md](docs/kiro-logs/s13a-prompt.md)**, **[s13a.log](docs/kiro-logs/s13a.log)**, **[s13b-prompt.md](docs/kiro-logs/s13b-prompt.md)**, **[s13b.log](docs/kiro-logs/s13b.log)**: production-readiness fixes from the three-reviewer audit.
+- **[s14a-prompt.md](docs/kiro-logs/s14a-prompt.md)**, **[s14a.log](docs/kiro-logs/s14a.log)**, **[s14b-prompt.md](docs/kiro-logs/s14b-prompt.md)**, **[s14b.log](docs/kiro-logs/s14b.log)**, **[s14c-prompt.md](docs/kiro-logs/s14c-prompt.md)**, **[s14c.log](docs/kiro-logs/s14c.log)**: second production-readiness round (batch errors, filtered search, URL/secret hardening, privacy policy).
 
 ---
 

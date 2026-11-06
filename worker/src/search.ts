@@ -115,12 +115,17 @@ function snippet(text: string, query: string, max = 320): string {
 export async function hybridSearch(env: Env, args: Filters & { query: string; limit?: number }) {
   const limit = Math.min(25, Math.max(1, args.limit ?? 8));
   const ftsQ = buildFtsQuery(args.query);
+  // Filters are applied after fusion, so filtered queries ("last week", one domain) need a wider candidate pool.
+  // Vectorize caps topK at 100; the IN list below is sent in slices to stay under D1's 100 bound-parameter limit.
+  const filtered = !!(args.from || args.to || args.domain || args.kind);
+  const ftsK = filtered ? 200 : 40;
+  const vecK = filtered ? 100 : 40;
   let fts: { id: string; score: number }[] = [];
   if (ftsQ) {
     try {
       const r = await env.DB.prepare(
-        `SELECT chunk_id, bm25(chunks_fts) AS s FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY s LIMIT 40`
-      ).bind(ftsQ).all<{ chunk_id: string; s: number }>();
+        `SELECT chunk_id, bm25(chunks_fts) AS s FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY s LIMIT ?`
+      ).bind(ftsQ, ftsK).all<{ chunk_id: string; s: number }>();
       fts = (r.results ?? []).map(x => ({ id: x.chunk_id, score: x.s }));
     } catch (e) {
       console.warn('fts failed', (e as Error).message);
@@ -130,20 +135,24 @@ export async function hybridSearch(env: Env, args: Filters & { query: string; li
   try {
     const { embedder, vectors } = getStores(env);
     const v = await embedder.embed(args.query);
-    vec = (await vectors.query(v, 40)).filter(m => m.score > 0);
+    vec = (await vectors.query(v, vecK)).filter(m => m.score > 0);
   } catch (e) {
     console.warn('vector search failed', (e as Error).message);
   }
-  const fused = rrf(fts, vec, 60).slice(0, 80);
+  const fused = rrf(fts, vec, 60).slice(0, filtered ? 300 : 80);
   if (!fused.length) return [];
 
   const ids = fused.map(f => f.id);
   const f = filterSql(args);
-  const rows = await env.DB.prepare(
-    `SELECT c.id AS chunk_id, c.text, ${PAGE_COLS} FROM chunks c JOIN pages p ON p.id = c.page_id
-     WHERE c.id IN (${ids.map(() => '?').join(',')}) AND ${f.sql}`
-  ).bind(...ids, ...f.args).all<PageRow & { chunk_id: string; text: string }>();
-  const byChunk = new Map((rows.results ?? []).map(r => [r.chunk_id, r]));
+  const byChunk = new Map<string, PageRow & { chunk_id: string; text: string }>();
+  for (let i = 0; i < ids.length; i += 80) {
+    const slice = ids.slice(i, i + 80);
+    const rows = await env.DB.prepare(
+      `SELECT c.id AS chunk_id, c.text, ${PAGE_COLS} FROM chunks c JOIN pages p ON p.id = c.page_id
+       WHERE c.id IN (${slice.map(() => '?').join(',')}) AND ${f.sql}`
+    ).bind(...slice, ...f.args).all<PageRow & { chunk_id: string; text: string }>();
+    for (const r of rows.results ?? []) byChunk.set(r.chunk_id, r);
+  }
 
   const seen = new Set<string>();
   const out = [];

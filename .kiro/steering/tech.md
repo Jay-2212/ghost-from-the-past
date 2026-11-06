@@ -99,5 +99,5 @@ chunk_vectors(chunk_id TEXT PRIMARY KEY,
 - Markdown: ATX headings, fenced code blocks, `-` bullets (via Turndown)
 - Chunking: ~900 chars target, max 1200 chars, 120-char overlap, markdown-aware (on headings/blank paras)
 - Date/time: ISO 8601 format (YYYY-MM-DD or ISO datetime), UTC unless `tz_offset_minutes` specified
-- Status badge: empty when haunting, "⏸" when paused (black text on black background `#111`)
+- Status badge (`setBadge` in `background.js`): empty when connected and haunting, `off` when paused, `!` when not configured (no Worker URL or secret); light text `#F7F5F0` on a `#111111` background
 - Active time: only counted when tab is visible AND focused; cap single gaps at 5s (survive sleep)

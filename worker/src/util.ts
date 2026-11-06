@@ -85,9 +85,15 @@ export function normaliseUrl(url: string): string {
     const trackingParams = [
       'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
       'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref_src',
-      'token', 'access_token', 'auth', 'key', 'code', 'session', 'sid', 'password'
+      'token', 'access_token', 'auth', 'key', 'code', 'session', 'sid', 'password',
+      'sig', 'signature', 'id_token', 'refresh_token', 'otp',
+      'api_key', 'apikey', 'secret', 'jwt', 'sessionid'
     ];
-    trackingParams.forEach(p => params.delete(p));
+    // case-insensitive; also every AWS presigned-URL param (X-Amz-Signature, X-Amz-Credential, ...)
+    for (const k of [...new Set(params.keys())]) {
+      const lk = k.toLowerCase();
+      if (trackingParams.includes(lk) || lk.startsWith('x-amz-')) params.delete(k);
+    }
 
     parsed.search = params.toString();
 

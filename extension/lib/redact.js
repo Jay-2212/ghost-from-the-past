@@ -45,6 +45,7 @@
     /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g,
     /\bhf_[A-Za-z0-9]{30,}\b/g,
     /\bnpm_[A-Za-z0-9]{36}\b/g,
+    /\bcf(?:ut|at|ct)_[A-Za-z0-9]{30,}/g,
     /\bya29\.[A-Za-z0-9_-]{20,}/g,
     /https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9\/_-]+/g,
     /https:\/\/(?:ptb\.|canary\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+/g,

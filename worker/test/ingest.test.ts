@@ -49,7 +49,8 @@ describe('ingestPages', () => {
     const db = fakeDb({ failChunkBatchOnce: true });
     const env: any = { DB: db, EMBED_MODE: 'mock', VECTOR_MODE: 'd1' };
 
-    await expect(ingestPages(env, [page])).rejects.toThrow('simulated failure');
+    const [failed] = await ingestPages(env, [page]);
+    expect(failed).toMatchObject({ url: page.url, status: 'error' });
     expect(db.chunks.size).toBe(0);
 
     const [r] = await ingestPages(env, [page]);
@@ -65,5 +66,15 @@ describe('ingestPages', () => {
     expect(first.status).toBe('created');
     const [second] = await ingestPages(env, [page]);
     expect(second).toMatchObject({ status: 'merged', chunks: 0 });
+  });
+
+  it('reports a throwing page as error and still ingests the rest of the batch', async () => {
+    const db = fakeDb({ failChunkBatchOnce: true });
+    const env: any = { DB: db, EMBED_MODE: 'mock', VECTOR_MODE: 'd1' };
+    const other = { url: 'https://example.com/other', title: 'Other', markdown: '# Other\n\nMore text.' };
+    const third = { url: 'https://example.com/third', title: 'Third', markdown: '# Third\n\nEven more.' };
+    const results = await ingestPages(env, [page, other, third]);
+    expect(results.map(r => r.status)).toEqual(['error', 'created', 'created']);
+    expect(results[0].url).toBe(page.url);
   });
 });

@@ -49,6 +49,13 @@ describe('humanReadableDuration', () => {
 });
 
 describe('normaliseUrl', () => {
+  it('strips signature, token, otp and X-Amz-* params case-insensitively', () => {
+    const result = normaliseUrl(
+      'https://bucket.s3.amazonaws.com/f.pdf?X-Amz-Signature=abc&x-amz-credential=def&X-AMZ-Date=1&Sig=1&signature=2&id_token=3&Refresh_Token=4&OTP=5&page=2'
+    );
+    expect(result).toBe('https://bucket.s3.amazonaws.com/f.pdf?page=2');
+  });
+
   it('lowercases hostname', () => {
     const result = normaliseUrl('https://Example.COM/page');
     expect(result).toContain('example.com');
@@ -76,6 +83,11 @@ describe('normaliseUrl', () => {
     expect(result).not.toContain('token');
     expect(result).not.toContain('access_token');
     expect(result).toContain('other=value');
+  });
+
+  it('removes api_key, apikey, secret, jwt and sessionid params (any case)', () => {
+    const result = normaliseUrl('https://example.com/a?API_KEY=1&apikey=2&Secret=3&jwt=4&SessionId=5&q=ok');
+    expect(result).toBe('https://example.com/a?q=ok');
   });
 
   it('handles invalid URLs gracefully', () => {

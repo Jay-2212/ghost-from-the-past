@@ -3,6 +3,12 @@ import { extractBearer, verifyBearer, verifyProof } from '../src/auth';
 import { secretConfigured, type Env } from '../src/env';
 
 describe('verifyBearer', () => {
+  it('compares against the trimmed secret, so a stored trailing newline does not reject everything', async () => {
+    expect(await verifyBearer('Bearer s3cret-value', 's3cret-value\n')).toBe(true);
+    expect(await verifyBearer('Bearer s3cret-value', '  s3cret-value \r\n')).toBe(true);
+    expect(await verifyBearer('Bearer x', ' \n')).toBe(false);
+  });
+
   it('accepts the right secret', async () => {
     expect(await verifyBearer('Bearer s3cret-value', 's3cret-value')).toBe(true);
     expect(await verifyBearer('bearer s3cret-value', 's3cret-value')).toBe(true);

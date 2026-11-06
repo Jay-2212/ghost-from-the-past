@@ -217,6 +217,11 @@ async function doSync() {
     }
     await chrome.storage.local.set({ queue: q });
   });
+  // the Worker returns one result per page, in order; pages it answered with status 'error' stay queued for the next sync
+  const keepErrored = async (pages, body) => {
+    const results = Array.isArray(body && body.results) ? body.results : [];
+    return pages.filter((e, i) => !(results[i] && results[i].status === 'error'));
+  };
   const failMsg = res => (res.status === 401 ? 'The Worker rejected the secret (401).' : `Worker answered ${res.status}.`);
 
   let sent = 0;
@@ -228,10 +233,10 @@ async function doSync() {
     try {
       const res = await post(batch);
       if (res.ok) {
-        await res.json().catch(() => ({}));
-        await settle(batch);
-        sent += batch.length;
-        batch.forEach(e => sentUrls.add(e.url));
+        const ok = await keepErrored(batch, await res.json().catch(() => ({})));
+        await settle(ok);
+        sent += ok.length;
+        ok.forEach(e => sentUrls.add(e.url));
         continue;
       }
       if (res.status !== 413) {
@@ -250,10 +255,10 @@ async function doSync() {
           error = failMsg(r);
           break outer;
         }
-        await r.json().catch(() => ({}));
-        await settle([e]);
-        sent += 1;
-        sentUrls.add(e.url);
+        const ok = await keepErrored([e], await r.json().catch(() => ({})));
+        await settle(ok);
+        sent += ok.length;
+        ok.forEach(x => sentUrls.add(x.url));
       }
     } catch (err) {
       error = `Could not reach the Worker (${(err && err.message) || 'network error'}).`;

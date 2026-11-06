@@ -1,0 +1,8 @@
+Apply these minimal low-risk fixes to the Ghost from the Past repo (current directory). Hard limit 9 minutes: skip anything non-trivial. No refactors/new features. Do NOT commit, push, deploy, or touch release/, shots/, secrets. Previous uncommitted edits in the tree are intentional; keep them.
+1. extension/lib/blocklist.js matchOne: a pattern starting with "*." (e.g. *.okta.com, *.auth0.com, *.slack.com) currently doesn't match the apex host (okta.com). Make "*.x" match x and any subdomain. Add a test in extension/test/privacy.test.mjs.
+2. extension/lib/redact.js: add Cloudflare API token formats used in .kiro/hooks/secret-guard.mjs (cfut_/cfat_/cfct_ prefixed tokens) to the secret patterns. Add a test case.
+3. extension/manifest.json CSP: object-src 'self' -> object-src 'none' (also check scripts/build-firefox.mjs copies it consistently).
+4. worker: wherever GHOST_SECRET is passed to verifyProof / the /api/verify HMAC proof, use the trimmed value too (verifyBearer already trims), so proof and bearer agree.
+5. worker/src/index.ts: if ALLOW_QUERY_TOKEN is enabled and the request authenticated via the ?token= query param, do not send Access-Control-Allow-Origin: * on that /mcp response (header auth keeps the current CORS). Keep it tiny; add a vitest case if a test file already covers index/CORS, otherwise skip the test.
+6. Verify extension/background.js doSync matches per-page results to the batch by position: confirm the Worker's ingestPages returns exactly one result per input page, in order, for every path (skipped/blocked/error/merged/created). If not guaranteed, match by url instead.
+Run `npm test` and `cd worker && npx tsc --noEmit`; all must pass. Finish with files changed, items done/skipped, test counts.

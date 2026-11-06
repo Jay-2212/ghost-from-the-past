@@ -65,6 +65,9 @@ export class VectorizeStore implements VectorStore {
 /**
  * D1VectorStore: stores vectors as JSON in D1 chunk_vectors table, brute-force cosine similarity.
  */
+export const D1_VECTOR_MAX_ROWS = 3000;
+let d1VectorCapWarned = false;
+
 export class D1VectorStore implements VectorStore {
   constructor(private db: any) {} // D1 binding
 
@@ -79,6 +82,17 @@ export class D1VectorStore implements VectorStore {
   }
 
   async query(values: number[], topK: number): Promise<VectorQueryResult[]> {
+    // brute force loads every vector; past the cap it would exceed Worker CPU/memory,
+    // so return nothing and let search fall back to full-text (Vectorize is the path for big memories)
+    const count = await this.db.prepare('SELECT COUNT(*) AS n FROM chunk_vectors').first();
+    if (Number(count?.n ?? 0) > D1_VECTOR_MAX_ROWS) {
+      if (!d1VectorCapWarned) {
+        d1VectorCapWarned = true;
+        console.warn(`D1 vector store has more than ${D1_VECTOR_MAX_ROWS} chunks; semantic search disabled, using full-text only. Add a Vectorize binding.`);
+      }
+      return [];
+    }
+
     const result = await this.db
       .prepare('SELECT chunk_id, vector FROM chunk_vectors')
       .all();
