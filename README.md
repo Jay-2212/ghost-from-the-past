@@ -283,6 +283,8 @@ D1-stored vectors are scanned in full on every semantic query, so switch to Vect
 
 ### Popup
 
+The popup has a small ghost guide: a bobbing bedsheet ghost and one hint line that says what to tap next (it holds still if your system asks for reduced motion). The first two screenshots below predate it; the next two show it.
+
 ![Popup before sync](shots/popup-before-sync.png)
 
 *Before syncing: local queue shown.*
@@ -294,6 +296,14 @@ D1-stored vectors are scanned in full on every semantic query, so switch to Vect
 ![Popup: Don't remember this site](shots/popup-forget-site.png)
 
 *Popup button shows "Won't remember \<site\>" with Undo for 5 seconds.*
+
+![Popup ghost guide, first run](shots/popup-ghost-guide.png)
+
+*First run: the ghost points at "Set up my ghost".*
+
+![Popup ghost guide, pages waiting](shots/popup-ghost-guide-queued.png)
+
+*Configured, with pages remembered: the ghost says to tap Sync now.*
 
 ### Options
 
@@ -337,7 +347,7 @@ cd extension
 npm test
 ```
 
-40 tests covering extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking. `npm test` runs `node --test test/*.test.mjs`. From the repo root, `node --test extension/test` also works on Node 22: Node no longer expands a directory there, so it loads `extension/test/index.js`, which imports every `*.test.mjs`.
+45 tests covering the ghostly copy (every error says what to do next), extraction pipeline, privacy/blocklist/redaction (incl. hash routes, new private-surface defaults, nested meta, extra token formats), the Worker proof (HMAC test vector) and blocklist-undo. Uses jsdom for DOM mocking. `npm test` runs `node --test test/*.test.mjs`. From the repo root, `node --test extension/test` also works on Node 22: Node no longer expands a directory there, so it loads `extension/test/index.js`, which imports every `*.test.mjs`.
 
 ### End-to-End Tests (Playwright)
 
@@ -347,7 +357,7 @@ WORKER_URL=https://ghost-from-the-past.YOUR_SUBDOMAIN.workers.dev GHOST_SECRET=Y
   node tests/e2e/run.mjs                                     # against a deployed Worker
 ```
 
-Loads the real unpacked extension in headless Chromium. On 2026-11-06 it passed 26/26 against a freshly deployed Worker (new D1, new secret, deployed with `npm run deploy`); results are in `shots/e2e-results.json`. A local run adds two checks (wrangler dev starts, the landing page hands the Worker URL to the extension); the last local run was 28/28. The checks:
+Loads the real unpacked extension in headless Chromium. On 2026-11-06 it passed 26/26 against a freshly deployed Worker (new D1, new secret, deployed with `npm run deploy`); results are in `shots/e2e-results.json`. A local run adds two checks (wrangler dev starts, the landing page hands the Worker URL to the extension); the last local run was 28/28 (2026-11-26, after the s15 ghost-mischief pass). The checks:
 
 - Extension service worker loads; onboarding opens on install; the extension generates a 256-bit secret.
 - Worker reachable; connection test passes ("All done! I'll be watching you."); Options "Test connection" works.
@@ -378,7 +388,7 @@ Ghost was built with **Kiro CLI** for Kiroween 2026, in headless sessions (`kiro
 
 | Feature | Files |
 |---------|-------|
-| Spec | [`.kiro/specs/ghost-from-the-past/`](.kiro/specs/ghost-from-the-past/) (`requirements.md`, `design.md`, `tasks.md`) |
+| Spec | [`.kiro/specs/ghost-from-the-past/`](.kiro/specs/ghost-from-the-past/) and [`.kiro/specs/ghost-mischief/`](.kiro/specs/ghost-mischief/) (`requirements.md`, `design.md`, `tasks.md`) |
 | Steering | [`.kiro/steering/`](.kiro/steering/) (`product.md`, `tech.md`, `design-language.md`) |
 | Hooks | [`.kiro/hooks/`](.kiro/hooks/) (`secret-guard.mjs`, `test-on-write.mjs`, `README.md`) |
 | Agent | [`.kiro/agents/ghost.json`](.kiro/agents/ghost.json) |
@@ -445,7 +455,8 @@ Based on `git log --oneline` and session logs in [`docs/kiro-logs/`](docs/kiro-l
 | `703d62b` | **Kiro** | Doc and repo fixes from the final audits: README deploy/test/Kiro sections, steering and design corrections, manifest cleanup, `extension/node_modules` untracked, logs README | S11b |
 | `703d62b` | **Kiro** | Firefox build: `scripts/build-firefox.mjs` (Firefox manifest in `dist/firefox/`, Firefox release zip), Chrome-only API audit ([s12.log](docs/kiro-logs/s12.log)) | S12 |
 | `84a4280` | **Kiro** (claude-opus-5.5) + **Hark** | Production-readiness pass after a three-reviewer audit (Kiro, Grok, Antigravity): sync no longer wedges on 413 (batch 5, per-page retry), merge path rewrites missing chunks, `list_pages` marked untrusted, content script no longer reads the secret, test hook gated, `forget([])` guard, more default-blocked consoles and `AWS_SECRET_ACCESS_KEY=`-style redaction, a11y fixes, `.kiro/settings/mcp.json`; Hark: README/test-count updates and review | S13a, S13b |
-| (this commit) | **Kiro** (claude-opus-5.5) + **Hark** | Second audit round (Kiro, Grok, Antigravity): one failing page no longer fails a sync batch (per-page `error` results, errored pages stay queued), filtered searches widen the candidate pool, trimmed `GHOST_SECRET` for bearer and proof, MCP titles kept on one line, more credential URL params stripped (case-insensitive, `X-Amz-*`), `*.x` blocklist rules also match the apex, `notion.com`/`facebook.com/messages*` blocked, Cloudflare token redaction, CSP `object-src 'none'`, no CORS on `?token=` MCP responses, D1 vector scan capped at 3,000 chunks, `PRIVACY.md`; Hark: review triage, README counts | S14a, S14b, S14c |
+| (S14 commit) | **Kiro** (claude-opus-5.5) + **Hark** | Second audit round (Kiro, Grok, Antigravity): one failing page no longer fails a sync batch (per-page `error` results, errored pages stay queued), filtered searches widen the candidate pool, trimmed `GHOST_SECRET` for bearer and proof, MCP titles kept on one line, more credential URL params stripped (case-insensitive, `X-Amz-*`), `*.x` blocklist rules also match the apex, `notion.com`/`facebook.com/messages*` blocked, Cloudflare token redaction, CSP `object-src 'none'`, no CORS on `?token=` MCP responses, D1 vector scan capped at 3,000 chunks, `PRIVACY.md`; Hark: review triage, README counts | S14a, S14b, S14c |
+| (s15 commit) | **Kiro** (Auto model) + **Hark** | Kiroween mischief + UX polish pass. Hark wrote the orchestration prompt; Kiro CLI wrote all the code: `extension/lib/strings.js` (ghostly copy, every error says what to do next), the popup ghost guide (inline SVG, hint line, respects reduced motion), focus/contrast/aria polish, `strings.test.mjs`, `.kiro/specs/ghost-mischief/`, and rebuilt the release zips. Copy and code were then reviewed by Meta muse-spark via API (see [docs/reviews/s15-meta-review.md](docs/reviews/s15-meta-review.md)); Kiro verified each point and made the fixes (S15b): friendlier, non-surveillance wording, popup guide priority, copy guard, aria fixes, dead strings removed; then the S15c copy round restored the ghost wit (copy deck by Meta muse-spark, integrated by Kiro, copy test now bans only surveillance phrasing). e2e re-run after the pass (s15d): 28/28 local, popup ghost-guide screenshots refreshed in `shots/`. | S15, S15b, S15c |
 
 **Product owner (Jay)**: idea, name and requirements. `docs/BRIEF.md` was written down by Hark from those requirements.
 
@@ -479,6 +490,7 @@ Kiro session logs and prompts are in [`docs/kiro-logs/`](docs/kiro-logs/) ([how 
 - **[s12-prompt.md](docs/kiro-logs/s12-prompt.md)**, **[s12.log](docs/kiro-logs/s12.log)**: Firefox build (`scripts/build-firefox.mjs`).
 - **[s13a-prompt.md](docs/kiro-logs/s13a-prompt.md)**, **[s13a.log](docs/kiro-logs/s13a.log)**, **[s13b-prompt.md](docs/kiro-logs/s13b-prompt.md)**, **[s13b.log](docs/kiro-logs/s13b.log)**: production-readiness fixes from the three-reviewer audit.
 - **[s14a-prompt.md](docs/kiro-logs/s14a-prompt.md)**, **[s14a.log](docs/kiro-logs/s14a.log)**, **[s14b-prompt.md](docs/kiro-logs/s14b-prompt.md)**, **[s14b.log](docs/kiro-logs/s14b.log)**, **[s14c-prompt.md](docs/kiro-logs/s14c-prompt.md)**, **[s14c.log](docs/kiro-logs/s14c.log)**: second production-readiness round (batch errors, filtered search, URL/secret hardening, privacy policy).
+- **[s15-prompt.md](docs/kiro-logs/s15-prompt.md)**, **[s15.log](docs/kiro-logs/s15.log)**: Kiroween mischief + UX polish pass (ghostly copy, popup ghost guide, accessibility), plus the S15b fixes after the Meta muse-spark review and the S15c copy round (copy deck by Meta muse-spark, integrated by Kiro).
 
 ---
 

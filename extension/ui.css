@@ -4,7 +4,7 @@
   --card: #FFFFFF;
   --ink: #111111;
   --muted: #55524C;
-  --faint: #8A867E;
+  --faint: #55524C;
   --line: 1.5px solid var(--ink);
   --r-card: 22px;
   --r-btn: 14px;
@@ -26,7 +26,7 @@ a { color: var(--ink); text-underline-offset: 2px; }
 .mark { width: 36px; height: 36px; flex: none; }
 .btn {
   appearance: none; font: 600 13px/1 var(--font); color: var(--ink); background: var(--paper);
-  border: var(--line); border-radius: var(--r-btn); padding: 10px 14px; cursor: pointer; text-decoration: none;
+  border: var(--line); border-radius: var(--r-btn); padding: 10px 14px; min-height: 38px; cursor: pointer; text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .12s, color .12s;
 }
 .btn:hover:not(:disabled) { background: var(--ink); color: var(--paper); }
@@ -36,7 +36,11 @@ a { color: var(--ink); text-underline-offset: 2px; }
 .btn.solid:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
 .btn.big { font-size: 15px; padding: 14px 22px; border-radius: 999px; }
 .btn.block { width: 100%; }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 5px var(--paper); }
+.btn.solid:focus-visible { box-shadow: 0 0 0 5px var(--paper); }
+.switch input:focus-visible { outline-offset: 3px; }
+input:focus-visible, textarea:focus-visible { outline-offset: 1px; box-shadow: none; }
+summary:focus-visible { outline-offset: 4px; }
 .pill { display: inline-flex; align-items: center; gap: 8px; border: var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 700; background: var(--paper); }
 .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); }
 .pill.paused .dot { background: transparent; border: 1.5px solid var(--ink); }
@@ -55,6 +59,14 @@ label { font-weight: 600; display: block; margin-bottom: 6px; }
 .switch input:checked::after { left: 18px; background: var(--paper); }
 code, .mono { font-family: var(--mono); font-size: 12px; }
 .codebox { font-family: var(--mono); font-size: 12px; background: var(--paper); border: var(--line); border-radius: 12px; padding: 10px 12px; white-space: pre-wrap; word-break: break-all; }
-.toast { min-height: 18px; font-size: 12px; font-weight: 600; }
+.toast { min-height: 18px; font-size: 12px; font-weight: 600; line-height: 1.4; }
 .divider { border: 0; border-top: 1.5px dashed var(--ink); opacity: .25; margin: 4px 0; }
 @media (prefers-reduced-motion: no-preference) { .float { animation: float 3.2s ease-in-out infinite; } @keyframes float { 50% { transform: translateY(-6px); } } }
+
+/* ghost guide: tiny bedsheet ghost + one hint line. Decorative SVG is aria-hidden; the text is a polite live region. */
+.guide { gap: 10px; align-items: center; background: var(--card); border: var(--line); border-radius: 18px; padding: 8px 12px; }
+.guide-ghost { flex: none; }
+.guide-text { color: var(--ink); line-height: 1.4; }
+.guide.pointing { border-style: solid; box-shadow: 3px 3px 0 var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .guide-ghost { animation: bob 3.2s ease-in-out infinite; } @keyframes bob { 50% { transform: translateY(-3px) rotate(-3deg); } } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }

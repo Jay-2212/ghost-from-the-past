@@ -1,6 +1,6 @@
 {
-  "base": "https://ghost-from-the-past-test.jb-brain.workers.dev",
-  "at": "2026-11-06T03:08:43.099Z",
+  "base": "http://127.0.0.1:8787",
+  "at": "2026-11-26T17:28:15.422Z",
   "results": [
     {
       "name": "extension service worker loads",
@@ -18,19 +18,29 @@
       "detail": ""
     },
     {
-      "name": "remote worker reachable",
+      "name": "worker starts (wrangler dev, local D1)",
       "ok": true,
       "detail": ""
     },
     {
-      "name": "connection test passes -> \"All done! I'll be watching you.\"",
+      "name": "landing page hands the Worker URL to the extension",
       "ok": true,
-      "detail": "Connected to https://ghost-from-the-past-test.jb-brain.workers.dev · 3 page(s) remembered so far."
+      "detail": "sent"
+    },
+    {
+      "name": "onboarding asks to confirm the offered Worker",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "connection test passes -> \"All done!\"",
+      "ok": true,
+      "detail": "Connected to http://127.0.0.1:8787 · 0 page(s) remembered so far. Boo!"
     },
     {
       "name": "options: test connection",
       "ok": true,
-      "detail": "Connected · 3 page(s) remembered"
+      "detail": "Connected. 0 page(s) remembered so far. Nicely haunted."
     },
     {
       "name": "pages captured into the local queue",
@@ -65,7 +75,7 @@
     {
       "name": "search_memory with domain filter finds MDN",
       "ok": true,
-      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (29s, docs-page)"
+      "detail": "https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API (4s, docs-page)"
     },
     {
       "name": "list_pages for today",
@@ -75,7 +85,7 @@
     {
       "name": "get_page returns full markdown",
       "ok": true,
-      "detail": "94876 chars"
+      "detail": "93816 chars"
     },
     {
       "name": "forget refuses without confirm",
@@ -130,7 +140,7 @@
     {
       "name": "a fake Worker that cannot prove the secret is refused and never sees it",
       "ok": true,
-      "detail": "That Worker could not prove it knows your secret, so the secret was not sent. Check the address, or paste the secret you set on the Worker."
+      "detail": "That Worker doesn't know the secret handshake, so nothing was sent. Check the address, or paste the secret you set on the Worker."
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { S } from './lib/strings.js';
 import { getSettings, DEPLOY_URL } from './lib/settings.js';
 const $ = id => document.getElementById(id);
 const send = msg => chrome.runtime.sendMessage(msg);
@@ -20,11 +21,11 @@ async function ensureSecret() {
 }
 
 async function connect(workerUrl, secret) {
-  $('connToast').textContent = 'Checking your ghost…';
+  $('connToast').textContent = S.onboarding.checking;
   const r = await send({ type: 'ghost:connect', workerUrl, secret, onboarded: true });
   if (!r.ok) { $('connToast').textContent = r.error; return false; }
   $('connToast').textContent = '';
-  $('doneInfo').textContent = `Connected to ${r.url} · ${r.pages} page(s) remembered so far.`;
+  $('doneInfo').textContent = S.onboarding.done(r.url, r.pages);
   show(3);
   return true;
 }
@@ -54,17 +55,17 @@ function updateSecretDisplay() {
 $('toggleSecret').onclick = () => {
   secretMasked = !secretMasked;
   $('toggleSecret').textContent = secretMasked ? 'Show' : 'Hide';
+  $('toggleSecret').setAttribute('aria-label', secretMasked ? 'Show secret' : 'Hide secret');
   $('toggleSecret').setAttribute('aria-pressed', secretMasked ? 'false' : 'true');
   updateSecretDisplay();
 };
 
 $('copySecret').onclick = async () => {
-  await navigator.clipboard.writeText(fullSecret);
-  $('deployToast').textContent = 'Secret copied.';
+  try { await navigator.clipboard.writeText(fullSecret); $('deployToast').textContent = S.onboarding.secretCopied; } catch { $('deployToast').textContent = S.err.copyFailed; }
 };
 $('deploy').onclick = async () => {
   try { await navigator.clipboard.writeText(fullSecret); } catch { /* clipboard may be blocked; the Copy button still works */ }
-  $('deployToast').textContent = 'Secret copied. Paste it into GHOST_SECRET on the Cloudflare page, then press Deploy there.';
+  $('deployToast').textContent = S.onboarding.deployCopied;
   chrome.tabs.create({ url: DEPLOY_URL });
 };
 $('offerYes').onclick = async () => {

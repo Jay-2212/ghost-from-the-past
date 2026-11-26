@@ -1,0 +1,41 @@
+[tool] Running: cd /workspace/work/ghost-from-the-past && cat extension/lib/strings.js && cat docs/reviews/s15c-meta-copy-deck.js && cat extension/test/strings.test.mjs && git status --short | head
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && grep -n -iE "haunt|remember|hint|empty|ghost|nothing|pill|status" popup.html | head -40; echo ---; grep -n -iE ">[^<]{12,}<|placeholder|...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && grep -rn -iE "Remembering|Haunting|Removed|tagline|nothing here" tests/e2e/run.mjs extension/popup.js extension/options.js extension/onboarding.js...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'EOF' p='lib/strings.js' s=open(p).read() R=[ ("'No Worker connected yet. Open Settings and connect your Worker.'","\"No Wor...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && sed -i 's/Settings · your memories stay in your own Cloudflare account/Settings · your memories stay in your own Cloudflare account, in your own...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && node --test test/strings.test.mjs 2>&1 | grep -B3 -A12 "not ok" | head -40
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && node test/strings.test.mjs 2>&1 | head -15
+[tool] status: Completed
+Apostrophe in a single-quoted string. Fixing it and rebuilding.
+[tool] Running: cd /workspace/work/ghost-from-the-past && sed -i "s/so it can't keep a secret/so it has nothing to whisper/" extension/lib/strings.js && (cd extension && npm test 2>&1 | grep -E "^# (tests...
+[tool] status: Completed
+Now docs.
+[tool] Running: cd /workspace/work/ghost-from-the-past && python3 - <<'EOF' def rep(f,a,b): s=open(f).read(); assert a in s,a; open(f,'w').write(s.replace(a,b,1)) rep('.kiro/specs/ghost-mischief/tasks.md'...
+[tool] status: Completed
+The ghost wit is back in the copy, and the extension and worker suites pass. Nothing is committed.
+
+**Tests:** the extension suite is 45 of 45 and the worker suite is 53 of 53. I didn't run e2e.
+
+**Zips:** I rebuilt both with `build-chrome.mjs` and `build-firefox.mjs`. I copied the Chromium zip to `release/ghost-from-the-past-extension-v1.0.0.zip`. `cmp` shows it is byte-identical, and `unzip -l` shows 35 files with the new `lib/strings.js` inside.
+
+**What changed**
+- **`strings.js`:** I merged the deck's values with all keys, signatures, placeholders and the stable test strings kept. I dropped the contradictory lines and em-dash jokes.
+- **Blocked pages:** both `popup.noSite` and `guide.offLimits` now say "This page stays unhaunted. I never remember it."
+- **Sync success:** it now reads "Remembered N page(s). They'll haunt your AI later."
+- **HTML:** I added light touches in the popup tagline ("…every page you read. Boo."), the options pause switch and the options subtitle. The status pill stays "Remembering", since that's already clear.
+- **Tests:** the "creepy words" test now bans only watching you, spying, spy, stalk, tracking you, following you and I see everything. The "every error has an instruction" test is unchanged. I also updated the siteBlocked assertion to match the new wording.
+- **Docs:** I updated `.kiro/specs/ghost-mischief/tasks.md`, the s15 entry in `docs/kiro-logs/README.md`, and the README credits and authorship row.
+
+**6 example strings**
+1. Sync success: "Remembered 3 page(s). They'll haunt your AI later."
+2. Blocked page: "This page stays unhaunted. I never remember it."
+3. Idle hint: "All quiet in the crypt. Keep reading and I'll remember it, only for you."
+4. Secret rejected: "Boo. The Worker turned your secret away (401). Paste the matching GHOST_SECRET into Settings, then press Sync now."
+5. Unexpected error: "A small poltergeist glitch (timeout). Try again; if it keeps happening, reload the extension."
+6. Site blocked: "Won't remember a.com. Poof: 2 local page(s) removed. Ask your AI to "forget a.com" to clear older memories."

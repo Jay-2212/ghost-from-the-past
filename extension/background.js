@@ -2,6 +2,7 @@
 // Holds the local queue, redacts, enforces the blocklist/pause, and syncs batches to the user's own Worker.
 import './lib/blocklist.js';
 import './lib/redact.js';
+import { S } from './lib/strings.js';
 import { getSettings, setSettings, generateSecret, isAcceptableWorkerUrl, normaliseWorkerUrl, workerHost, newNonce, proofFor } from './lib/settings.js';
 
 const B = globalThis.GhostBlocklist;
@@ -169,7 +170,7 @@ function syncNow(reason) {
 async function doSync() {
   const s = await getSettings();
   const st0 = await getStats();
-  if (!s.workerUrl || !s.secret) return { ok: false, error: 'Not connected to a Worker yet.' };
+  if (!s.workerUrl || !s.secret) return { ok: false, error: S.err.notConnected };
   if (s.paused) return { ok: true, sent: 0, paused: true };
   const now = Date.now();
   const minDwell = Number.isFinite(+s.minDwellMs) ? +s.minDwellMs : 5000;
@@ -222,7 +223,7 @@ async function doSync() {
     const results = Array.isArray(body && body.results) ? body.results : [];
     return pages.filter((e, i) => !(results[i] && results[i].status === 'error'));
   };
-  const failMsg = res => (res.status === 401 ? 'The Worker rejected the secret (401).' : `Worker answered ${res.status}.`);
+  const failMsg = res => (res.status === 401 ? S.err.secretRejected : S.err.workerStatus(res.status));
 
   let sent = 0;
   let error = null;
@@ -261,7 +262,7 @@ async function doSync() {
         ok.forEach(x => sentUrls.add(x.url));
       }
     } catch (err) {
-      error = `Could not reach the Worker (${(err && err.message) || 'network error'}).`;
+      error = S.err.unreachable((err && err.message) || 'network error');
       break;
     }
   }
@@ -284,11 +285,11 @@ async function doSync() {
 // ---------- connection helpers ----------
 async function testConnection(workerUrl, secret) {
   const url = normaliseWorkerUrl(workerUrl);
-  if (!url || !isAcceptableWorkerUrl(url)) return { ok: false, error: 'Use the https:// address of your Worker.' };
+  if (!url || !isAcceptableWorkerUrl(url)) return { ok: false, error: S.err.badUrl };
   try {
     const h = await fetchWithTimeout(`${url}/health`).then(r => r.json());
-    if (!h || h.name !== 'ghost-from-the-past') return { ok: false, error: 'That address is not a Ghost from the Past Worker.' };
-    if (h.configured === false) return { ok: false, error: 'The Worker has no GHOST_SECRET yet. Add it in Cloudflare (Settings → Variables and Secrets).' };
+    if (!h || h.name !== 'ghost-from-the-past') return { ok: false, error: S.err.notGhostWorker };
+    if (h.configured === false) return { ok: false, error: S.err.noSecretOnWorker };
     
     // Proof challenge: Worker must prove it knows the secret before we send it
     const nonce = newNonce();
@@ -299,28 +300,28 @@ async function testConnection(workerUrl, secret) {
     });
     
     if (verifyRes.status === 404) {
-      return { ok: false, error: 'This Worker is out of date. Redeploy it, then try again.' };
+      return { ok: false, error: S.err.workerOutdated };
     }
     
     if (!verifyRes.ok) {
-      return { ok: false, error: `Worker verify failed (${verifyRes.status}).` };
+      return { ok: false, error: S.err.verifyFailed(verifyRes.status) };
     }
     
     const verifyData = await verifyRes.json();
     const expectedProof = await proofFor(secret, url, nonce);
     
     if (verifyData.proof !== expectedProof) {
-      return { ok: false, error: 'That Worker could not prove it knows your secret, so the secret was not sent. Check the address, or paste the secret you set on the Worker.' };
+      return { ok: false, error: S.err.cannotProve };
     }
     
     // Proof verified, now test with the actual secret
     const r = await fetchWithTimeout(`${url}/api/stats`, { headers: { authorization: `Bearer ${secret}` } });
-    if (r.status === 401) return { ok: false, error: 'The Worker is alive, but the secret does not match.' };
-    if (!r.ok) return { ok: false, error: `Worker answered ${r.status}.` };
+    if (r.status === 401) return { ok: false, error: S.err.secretMismatch };
+    if (!r.ok) return { ok: false, error: S.err.workerStatus(r.status) };
     const data = await r.json();
     return { ok: true, url, pages: data.pages, vectorMode: data.vectorMode, embedMode: data.embedMode };
   } catch (e) {
-    return { ok: false, error: `Could not reach ${url} (${e.message}).` };
+    return { ok: false, error: S.err.unreachableUrl(url, e.message) };
   }
 }
 
@@ -361,7 +362,7 @@ const fromExtensionPage = sender => sender && sender.id === chrome.runtime.id &&
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const reply = p => {
-    Promise.resolve(p).then(sendResponse, e => sendResponse({ ok: false, error: String((e && e.message) || e) }));
+    Promise.resolve(p).then(sendResponse, e => sendResponse({ ok: false, error: S.err.unexpected(String((e && e.message) || e)) }));
     return true; // keep the channel open for the async answer
   };
   if (!msg || typeof msg.type !== 'string') return false;

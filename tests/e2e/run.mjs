@@ -128,7 +128,7 @@ async function main() {
     }
     await ob.waitForFunction(() => !document.getElementById('s3').hidden, null, { timeout: 20000 }).catch(() => {});
     const done = await ob.isVisible('#s3');
-    check('connection test passes -> "All done! I\'ll be watching you."', done, done ? await ob.textContent('#doneInfo') : await ob.textContent('#connToast'));
+    check('connection test passes -> "All done!"', done, done ? await ob.textContent('#doneInfo') : await ob.textContent('#connToast'));
     await ob.screenshot({ path: join(SHOTS, 'onboarding-3-done.png') });
     await landing.close();
 
@@ -171,8 +171,8 @@ async function main() {
     await pop.waitForFunction(() => {
       const btn = document.getElementById('syncBtn');
       const txt = document.getElementById('lastSync').textContent;
-      // Match "Last sync: (just now|N min ago|N h ago|N d ago) · [1-9]N* page(s)" or "Sync problem"
-      return (!btn.disabled && (/Last sync: (just now|\d+ (min|h|d) ago) · [1-9]\d* page\(s\)/.test(txt) || /Sync problem/.test(txt)));
+      // Match "Last sync: (just now|N min ago|N h ago|N d ago) · [1-9]N* page(s)" or "Sync hiccup"
+      return (!btn.disabled && (/Last sync: (just now|\d+ (min|h|d) ago) · [1-9]\d* page\(s\)/.test(txt) || /Sync (problem|hiccup)/.test(txt)));
     }, null, { timeout: 30000 });
     const syncText = await pop.textContent('#lastSync');
     check('popup "Sync now" sends the queue', /Last sync: (just now|\d+ (min|h|d) ago) · [1-9]\d* page\(s\)/.test(syncText), syncText);

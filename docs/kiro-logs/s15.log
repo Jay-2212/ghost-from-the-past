@@ -1,0 +1,94 @@
+I'll start by reading the repo.
+[tool] Running: cd /workspace/work/ghost-from-the-past && git status --short | head; ls; cat package.json; ls extension extension/lib extension/test scripts docs/kiro-logs release shots .kiro/specs/*; cat...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && cat popup.html popup.js popup.css ui.css options.html options.js options.css onboarding.html onboarding.js onboarding.css lib/settings.j...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && cat scripts/lib/pack.mjs | head -50; cat docs/kiro-logs/README.md; grep -n "error\|Error" extension/background.js | head -80; grep -rn "error\|toa...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && grep -n "textContent\|toContain\|includes(\|/watching\|Haunting\|Won't\|Last sync\|innerText\|text=\|getByText\|#.*Toast\|Connected" tests/e2e/run...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && grep -rn "not a Ghost\|could not prove\|does not match\|Not connected\|Use the https\|not send\|secret was not\|Could not reach\|prove" tests/e2e/...
+[tool] status: Completed
+[tool] Creating strings.js
+[tool] status: Completed
+[tool] status: Failed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && grep -n "forget-site" -A14 background.js | head -40; grep -rn "Sync problem\|Not connected" ../tests ../extension/test | head
+[tool] status: Completed
+Now I'll apply the string module to background.js.
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'EOF' import re p='background.js'; t=open(p).read() def r(a,b): global t assert a in t,a t=t.replace(a,b) r("import { get...
+[tool] status: Completed
+Next, the popup: HTML, JS and CSS.
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'EOF' p='popup.html'; t=open(p).read() t=t.replace(''' <section id="connect"''',''' <div class="guide row" id="guide"> <s...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'EOF' p='popup.js'; t=open(p).read() i=t.index(" if (!r || !r.ok) return;\n const t = $('siteToast');") j=t.index("\n",t.ind...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && grep -rn "faint" *.css *.html | grep -v "^ui.css:5"; python3 - <<'EOF' p='ui.css'; t=open(p).read() t=t.replace("--faint: #8A867E;","--f...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && sed -i 's#/Sync problem/#/Sync (problem|hiccup)/#; s#or "Sync problem"#or "Sync hiccup"#' tests/e2e/run.mjs && cat extension/test/index.js | head ...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && npm test 2>&1 | grep -B3 -A12 "^not ok"| head -40; git stash -q; npm test 2>&1 | grep "^# \(pass\|fail\)"; git stash pop -q
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && git status --short; node --test test/pipeline.test.mjs 2>&1 | head -20; ls node_modules | head -3
+[tool] status: Completed
+Missing dev dependency (jsdom), not a code failure. I'll install it with `npm ci`, which the README setup uses.
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && npm ci 2>&1 | tail -3; npm test 2>&1 | grep "^# \(tests\|pass\|fail\)"; ls ../worker/node_modules >/dev/null 2>&1 && echo workerdeps || ...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && npm test 2>&1 | grep -E "Tests|Test Files|^# (tests|pass|fail)|FAIL"; which chromium chromium-browser google-chrome; ls ~/.cache/ms-playwright 2>/...
+[tool] status: Completed
+Unit suites pass (worker 53, extension 43). Chromium is cached, so I'll try e2e. It needs live internet pages and may fail on that alone.
+[tool] Running: cd /workspace/work/ghost-from-the-past && timeout 280 npm run test:e2e 2>&1 | tail -45
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && git status --short shots tests; for f in popup options onboarding background; do node --input-type=module --check < extension/$f.js && echo ok $f;...
+[tool] status: Completed
+The failed e2e run overwrote `shots/e2e-results.json`, so I'll restore it. A smoke test of the popup logic in jsdom will have to stand in for the browser.
+[tool] Running: cd /workspace/work/ghost-from-the-past && git checkout shots/e2e-results.json && cat > /tmp/smoke.mjs <<'EOF' import { JSDOM } from '/workspace/work/ghost-from-the-past/extension/node_modu...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && sed -i "s#replace(\"'./lib/\",\"'\"+X+\"lib/\")#replaceAll(\"'./lib/\",\"'\"+X+\"lib/\")#" /tmp/smoke.mjs && node /tmp/smoke.mjs 2>&1 | tail -20
+[tool] status: Completed
+The popup logic works. Next I'll find which script builds the `-extension-` zip.
+[tool] Running: cd /workspace/work/ghost-from-the-past && grep -rn "extension-v" scripts README.md package.json | head; sed -n 50,80p scripts/lib/pack.mjs; sed -n 1,25p .kiro/specs/ghost-from-the-past/req...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/release && git stash -q -- 2>/dev/null; git stash pop -q; for z in *.zip; do echo $z $(md5sum < $z | cut -c1-8) $(unzip -l $z | tail -1); done; cmp g...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && git status --short | wc -l; unzip -Z1 release/ghost-from-the-past-extension-v1.0.0.zip | sort > /tmp/old.txt; node scripts/build-chrome.mjs && nod...
+[tool] status: Completed
+The file lists match except for the new `lib/strings.js`. No script writes the `-extension-` zip, so I'll copy the Chromium zip over it. Both zips have the same layout.
+[tool] Running: cd /workspace/work/ghost-from-the-past/release && cp ghost-from-the-past-chromium-v1.0.0.zip ghost-from-the-past-extension-v1.0.0.zip && for z in *.zip; do echo $z; unzip -Z1 $z | grep -E ...
+[tool] status: Completed
+Now the spec, README, and log.
+[tool] Running: cd /workspace/work/ghost-from-the-past && mkdir -p .kiro/specs/ghost-mischief && cd .kiro/specs/ghost-mischief && cat > requirements.md <<'EOF' # Ghost Mischief — Requirements Goal: an i...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && git diff --stat README.md docs; git diff README.md | head -60; grep -c "s15" docs/kiro-logs/README.md
+[tool] status: Completed
+The mischief pass is done and the worker and extension suites pass. The e2e suite couldn't run here, and the new popup and copy have never been seen in a real browser. I did not commit or push, and I did not touch `.dev.vars` or `.env`.
+
+**User-visible changes**
+- **Copy:** every user-facing string now lives in `extension/lib/strings.js`. Errors say what happened and what to do next, for example "The spirits can't reach your Worker (…). Check the URL in Settings and try again." Success reads "Remembered N page(s). It'll haunt you later." Empty states read "Nothing haunts this list yet…".
+- **Ghost guide:** the popup has a small inline-SVG ghost that bobs, plus one hint line that names the next step. When nothing is configured it says "Boo. Start by connecting your Worker. Tap "Set up my ghost" below." Once configured, the hint follows this priority: sync error, paused, just synced, pages waiting, page can't be remembered, all quiet.
+- **Accessibility:** the ghost is `aria-hidden` and the hint is real text in a polite live region. It holds still under `prefers-reduced-motion`.
+- **Polish:** focus rings are now visible on every control. `--faint` text is darker, so it meets AA contrast. Buttons have a minimum height. Show and Copy buttons have `aria-label`s, and the read-only config boxes are named. Inline styles moved into the CSS files. Clipboard failures now show a message instead of failing silently.
+- **Not changed:** the manifest, storage keys, Worker API and security model.
+- **Test-relied strings:** the e2e script now accepts "Sync hiccup" as well as "Sync problem". The other strings the tests match (`Last sync:`, `Connected`, `Won't remember`) are unchanged.
+
+**Files changed**
+- **Extension:**
+  - New: `extension/lib/strings.js`.
+  - Edited: `background.js`, `popup.html`, `popup.js`, `options.html`, `options.js`, `options.css`, `onboarding.html`, `onboarding.js`, `ui.css`.
+- **Tests:** new `extension/test/strings.test.mjs`; edited `tests/e2e/run.mjs`.
+- **Docs and spec:**
+  - New: `.kiro/specs/ghost-mischief/` (`requirements.md`, `design.md`, `tasks.md`).
+  - Edited: `README.md` (credits row, spec link, test count, logs list) and `docs/kiro-logs/README.md` (s15 entry).
+- **Release zips:** the three zips under `release/`.
+
+**Tests**
+- Worker vitest passed 53 of 53.
+- Extension tests passed 43 of 43, including 3 new ones that check every error contains an instruction and that the stable strings didn't drift. I had to run `npm ci` in `extension/` first, because jsdom wasn't installed.
+- **e2e did not run.** Chromium fails to start because `libatk-1.0.so.0` is missing. I tried `npm run test:e2e` once; it crashed at launch, and I restored `shots/e2e-results.json`, which it had overwritten. Because the browser was unavailable, I took no new screenshots. The README says the popup screenshots predate the guide, and task 16 in the spec covers the e2e run and the screenshots. As a stand-in, I ran `popup.js` in jsdom for three states (not configured, queued pages, error on a non-capturable page). The hint, last-sync and site lines came out as expected.
+
+**Zips**
+- Rebuilt: yes. The manifest stays at 1.0.0.
+- `build-chrome.mjs` produced `release/ghost-from-the-past-chromium-v1.0.0.zip`, and `build-firefox.mjs` produced `release/ghost-from-the-past-firefox-v1.0.0.zip`. Each has 35 files.
+- No script writes the `-extension-` zip, so `release/ghost-from-the-past-extension-v1.0.0.zip` is a byte copy of the Chromium zip. Both had the same layout before.
+- All three zips contain `lib/strings.js`, and the extension zip's `popup.html` has the ghost guide.
+
+I did not do a Meta Llama copy review; the README credits row says so.

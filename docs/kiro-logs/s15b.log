@@ -1,0 +1,49 @@
+[tool] Reading s15-meta-review.md:1
+[tool] Running: git status --short; ls extension extension/lib extension/test release scripts; wc -l extension/lib/strings.js extension/popup.js extension/popup.html extension/options.html extension/optio...
+[tool] status: Completed
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension; cat lib/strings.js popup.js popup.html options.js options.html; cat test/strings.test.mjs; grep -n "row" options.css popup.css ui.css onbo...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past; grep -rniE "haunt|watch|spook|spirit|boo\b|antique|between us|knocking|napping|ghost check|I can wait|bit of" extension tests/e2e/run.mjs --include=...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'E' import re p='lib/strings.js'; s=open(p).read() def r(a,b): global s assert a in s,a s=s.replace(a,b) r("// Voice: a p...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'E' import re p='lib/strings.js'; s=open(p).read() def r(a,b): global s assert a in s,a s=s.replace(a,b) r("// Voice: a p...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past/extension && python3 - <<'E' def ed(p,pairs): s=open(p).read() for a,b in pairs: assert a in s,(p,a); s=s.replace(a,b) open(p,'w').write(s...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && sed -i 's|<div class="row"><button|<div class="row wrap"><button|' extension/options.html && grep -c 'row wrap' extension/options.html sed -i "s/c...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && cat >> extension/test/strings.test.mjs <<'E' test('copy in a privacy tool never sounds like surveillance', () => { const bad = /watching|haunt|spo...
+[tool] status: Completed
+Tests are green: extension 45/45 and worker 53/53. Next I'll build the zips and update the docs.
+[tool] Running: cd /workspace/work/ghost-from-the-past && node scripts/build-chrome.mjs && node scripts/build-firefox.mjs | tail -3 && cp release/ghost-from-the-past-chromium-v1.0.0.zip release/ghost-from...
+[tool] status: Completed
+[tool] Running: cd /workspace/work/ghost-from-the-past && python3 - <<'E' def ed(p,pairs): s=open(p).read() for a,b in pairs: assert a in s,(p,a); s=s.replace(a,b) open(p,'w').write(s) ed('READ...
+[tool] status: Completed
+The valid review points are fixed. The suites pass, the zips are rebuilt, and nothing is committed.
+
+**Verdicts.** I accepted all 11 points. Point 5 and point 7 were only partly valid. All 11 replies are under "## Kiro response" in `docs/reviews/s15-meta-review.md`.
+- **Popup guide:** queued pages now take priority over `justSynced`. It clears when the queue hint shows or when pause is toggled.
+- **`copySnippet`:** it now has the same guard as `copyMcp`.
+- **Aria:** I removed `aria-hidden` from the units, which now read "seconds on them". I also removed `role="textbox"` from `#mcpUrl` and `#mcpSnippet`.
+- **Dead strings:** I deleted 11 unused keys. A scan confirms every remaining key is used.
+- **`.row` wrap:** it is now `.row.wrap`, applied only to the four button rows in Settings.
+- **`siteBlocked`:** the count contract was fine, because `removed` is an object keyed by URL. I made the count defensive anyway and removed the trailing space.
+- **Copy:**
+  - Removed "watching", "haunt", "spook", "spirits", "Boo", "Keep it between us", "(I can wait)" and similar phrases.
+  - The status pill now says "Remembering" instead of "Haunting".
+  - Onboarding now says "I'll remember what you read, only for you."
+  - Error messages are plain and each still says what to do next.
+  - The forget-site error now says "Close and reopen the popup".
+- **Tests:** I added a test that fails if any string contains the creepy words. I also added one for the `siteBlocked` trailing space and bad-count case. The e2e check label in `tests/e2e/run.mjs` no longer quotes the old "I'll be watching you" text.
+
+**Not run.** The e2e suite did not run here, as in S15, because Chromium lacks system libraries.
+
+**Tests.** The extension suite passes 45/45, up from 43. The worker suite passes 53/53, and the worker code is unchanged.
+
+**Zips.** I rebuilt them with `build-chrome.mjs` and `build-firefox.mjs`. The chromium zip is copied byte-for-byte to `release/ghost-from-the-past-extension-v1.0.0.zip`, and `cmp` confirms they match. The new `lib/strings.js` is inside the zip.
+
+**Docs.** I updated `.kiro/specs/ghost-mischief/tasks.md`, the s15 entry in `docs/kiro-logs/README.md`, and the README. The README now credits the Meta muse-spark review and says Kiro made the fixes. I also updated its extension test count to 45.
+
+**To commit.** `extension/lib/strings.js` is still untracked, and `background.js` imports it. It must go into the same commit, or the service worker will fail to load.
